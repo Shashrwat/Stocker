@@ -18,9 +18,10 @@ import datetime
 app = FastAPI()
 
 # Configure CORS
+# IMPORTANT: In production, change "*" to your specific frontend URL(s)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[""], # WARNING: In production, change "" to your specific frontend URL(s)
+    allow_origins=["*"], # For deployment, replace "*" with your actual frontend domain(s)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

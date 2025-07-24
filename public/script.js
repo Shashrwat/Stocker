@@ -337,7 +337,7 @@ function renderMainChart(hist, symbol, chartType, indicator) {
 
     const layout = {
         title: {
-            text: <b>${symbol} ${chartType.toUpperCase()} ANALYSIS</b>,
+            text: `<b>${symbol} ${chartType.toUpperCase()} ANALYSIS</b>`, // Corrected template literal
             font: { size: 24, color: 'var(--color-primary)' }
         },
         height: 500,
@@ -598,7 +598,7 @@ async function loadAISentiment() {
         `;
     } catch (error) {
         console.error("Error fetching AI sentiment:", error);
-        aiInsightsSection.innerHTML = <p style="color: var(--color-accent); text-align: center;">Failed to load AI insights.</p>;
+        aiInsightsSection.innerHTML = `<p style="color: var(--color-accent); text-align: center;">Failed to load AI insights.</p>`;
     }
 }
 
