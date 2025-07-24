@@ -1,10 +1,12 @@
 fastapi>=0.111.0
-uvicorn>=0.30.0 # Uvicorn is good for local dev, Gunicorn for Render
+uvicorn>=0.30.0
 yfinance>=0.2.18
 pandas>=1.5.0
 requests>=2.28.0
 numpy>=1.23.0
 scipy>=1.10.0
-python-dotenv # For local development
-gunicorn>=21.0.0 # NEW
-aiofiles>=23.0.0 # NEW
+python-dotenv
+gunicorn>=21.0.0
+aiofiles>=23.0.0
+python-magic # NEW for better mimetype detection
+python-magic-bin # NEW for Windows compatibility, Render is Linux so might not strictly need it, but good to include

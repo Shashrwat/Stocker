@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import FileResponse
-from pathlib import Path
+from pathlib import Path # Ensure this is imported for robust path handling
 
 import yfinance as yf
 import pandas as pd
@@ -20,7 +20,7 @@ app = FastAPI()
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[""], # WARNING: In production, change "" to your specific frontend URL(s)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -32,12 +32,25 @@ _stock_data_cache = {}
 CACHE_TTL_SYMBOLS = 24 * 3600
 CACHE_TTL_STOCK_DATA = 3600
 
-# --- IMPORTANT: Mount StaticFiles FIRST and explicitly for the 'public' directory ---
-# This serves files like /static/style.css, /static/script.js, /static/images/etc.
-app.mount("/static", StaticFiles(directory="public"), name="static")
+# Get the absolute path to the public directory
+# This makes sure StaticFiles always points to the correct location regardless of execution context
+BASE_DIR = Path(_file_).resolve().parent.parent # Points to the 'Stocker' root directory
+PUBLIC_DIR = BASE_DIR / "public"
 
-# --- API Endpoints ---
-# These routes must come before the catch-all route for index.html
+# --- Reconfigure StaticFiles to be even more robust ---
+# This serves all files directly from the 'public' directory at the root level.
+# It also ensures that if a path is not found (e.g., a client-side route like /stock/xyz),
+# it will serve 'index.html' instead.
+app.mount(
+    "/",  # Mount the public directory at the root of the application
+    StaticFiles(directory=PUBLIC_DIR, html=True), # Use the absolute path
+    name="static_files" # Give it a name, can be anything descriptive
+)
+
+# --- API Endpoints (These MUST be prefixed to avoid conflict with static files) ---
+# For example, all API endpoints MUST start with '/api'.
+# Your existing API endpoints already do, so this is good.
+
 @app.get("/api/symbols")
 async def get_symbols_api():
     """Fetches unique stock symbols from NSE India with caching."""
@@ -108,24 +121,6 @@ async def get_sentiment_api():
         "bearish": bearish,
         "forecast": forecast
     }
-
-# --- This MUST be the very LAST route defined ---
-# It serves index.html for all paths not caught by /static or /api.
-# This is common for Single Page Applications (SPAs) where frontend routing handles paths.
-@app.get("/{full_path:path}")
-async def serve_frontend(full_path: str):
-    # This ensures that if a direct file is requested (like an image that wasn't mounted via /static/ for example),
-    # it gets served. Otherwise, it falls back to index.html for SPA routing.
-    # Note: /static/* requests should have been handled by app.mount("/static", ...) already.
-    # We explicitly check for common static file extensions to avoid conflicts if needed,
-    # though app.mount's precedence usually handles this.
-    
-    # In this specific case, as /static is handled, any other path (like /favicon.ico or non-existent routes)
-    # should return index.html for the SPA.
-    
-    # Render's build process typically places everything from your repo root,
-    # so 'public/index.html' needs to be available relative to the app's working directory.
-    return FileResponse(Path("public/index.html"))
 
 # This part is for local development with Uvicorn
 if __name__ == "__main__":
