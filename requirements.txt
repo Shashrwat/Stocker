@@ -5,8 +5,7 @@ pandas>=1.5.0
 requests>=2.28.0
 numpy>=1.23.0
 scipy>=1.10.0
-python-dotenv
-gunicorn>=21.0.0
+python-multipart
+python-magic
 aiofiles>=23.0.0
-python-magic # NEW for better mimetype detection
-python-magic-bin # NEW for Windows compatibility, Render is Linux so might not strictly need it, but good to include
+gunicorn>=21.0.0

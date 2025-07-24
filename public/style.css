@@ -1,15 +1,12 @@
-/* Stocker/public/style.css */
-
-/* --- Global Styles & Cosmic Background --- */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap');
 
 :root {
-    --color-primary: #00f2fe; /* Bright Cyan */
-    --color-secondary: #4facfe; /* Light Blue */
-    --color-accent: #ff6b6b; /* Reddish Pink */
-    --color-dark-bg: #0f0c29; /* Deep Purple-Blue */
-    --color-medium-bg: #1a1a4a; /* Medium Purple-Blue */
-    --color-light-bg: rgba(0,0,0,0.3); /* Translucent dark */
+    --color-primary: #00f2fe;
+    --color-secondary: #4facfe;
+    --color-accent: #ff6b6b;
+    --color-dark-bg: #0f0c29;
+    --color-medium-bg: #1a1a4a;
+    --color-light-bg: rgba(0,0,0,0.3);
     --border-radius: 15px;
     --transition-speed: 0.4s;
     --box-shadow-light: 0 8px 16px rgba(0, 242, 254, 0.1);
@@ -20,43 +17,42 @@
 html, body {
     margin: 0;
     padding: 0;
-    height: 100%; /* Ensure html and body take full height */
-    overflow-x: hidden; /* Prevent horizontal scroll */
+    height: 100%;
+    overflow-x: hidden;
     font-family: 'Roboto', sans-serif;
     color: white;
     box-sizing: border-box;
-    scroll-behavior: smooth; /* Smooth scrolling for anchors */
-}
-
-/* tsParticles container */
-#tsparticles {
-    position: fixed; /* Fixed position to cover the entire viewport */
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1; /* Send it to the background */
+    scroll-behavior: smooth;
     background: linear-gradient(-45deg,
         var(--color-dark-bg), var(--color-medium-bg), #2a2a6e, #3d3d8f,
         var(--color-dark-bg), var(--color-medium-bg));
     background-size: 400% 400%;
-    animation: cosmic-glow 20s ease infinite; /* Background gradient animation */
+    animation: cosmic-gradient-animation 20s ease infinite;
 }
 
-@keyframes cosmic-glow {
+@keyframes cosmic-gradient-animation {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
 }
 
-/* Main content wrapper to float above particles */
-.main-content-wrapper {
-    position: relative; /* Positioned above #tsparticles */
-    z-index: 1; /* Ensure content is above particles */
+#tsparticles {
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
-    max-width: 1200px; /* Limit content width for better readability */
+    height: 100%;
+    z-index: -1;
+    background-color: transparent;
+}
+
+.main-content-wrapper {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 1200px;
     margin: 0 auto;
-    padding: 20px 10px; /* Overall padding for content */
+    padding: 20px 10px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -78,8 +74,8 @@ html, body {
 }
 
 .header-text {
-    font-family: 'Orbitron', sans-serif; /* Sci-fi look */
-    font-size: clamp(2rem, 5vw, 3.5rem); /* Responsive font size */
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.5rem);
     color: var(--color-primary);
     animation: header-glow 2s ease-in-out infinite;
     margin-bottom: 0;
@@ -107,7 +103,7 @@ html, body {
     margin-bottom: 40px;
     width: 100%;
     max-width: 1000px;
-    background: rgba(0,0,0,0.2); /* Slightly darker background for controls */
+    background: rgba(0,0,0,0.2);
     padding: 25px;
     border-radius: var(--border-radius);
     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
@@ -554,7 +550,7 @@ html, body {
 }
 
 .footer .disclaimer {
-    animation: none; /* Disable pulse for footer disclaimer */
+    animation: none;
     margin-top: 10px;
     font-style: normal;
 }
@@ -577,7 +573,7 @@ html, body {
         min-width: unset;
     }
     .metrics-grid, .charts-row, .news-list {
-        grid-template-columns: 1fr; /* Stack elements on small screens */
+        grid-template-columns: 1fr;
     }
     .metric-glow, .plot-container, .ai-pulse, .news-section {
         padding: 15px;

@@ -1,6 +1,6 @@
-// Stocker/public/script.js
+// Stocker/public/static/script.js
 
-// Determine the API base URL. On Vercel, this will be the same origin as your frontend.
+// Determine the API base URL
 const API_BASE_URL = window.location.origin;
 
 // DOM Elements
@@ -29,12 +29,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadSymbols();
     await loadStockDataAndCharts();
     await loadAISentiment();
-    await loadNews(); // Load news on initial page load
+    await loadNews();
 
-    // Add event listeners for changes in select boxes
+    // Add event listeners
     stockSelect.addEventListener('change', async () => {
         await loadStockDataAndCharts();
-        await loadNews(); // Reload news when stock changes
+        await loadNews();
     });
     periodSelect.addEventListener('change', loadStockDataAndCharts);
     chartSelect.addEventListener('change', loadStockDataAndCharts);
@@ -50,7 +50,7 @@ async function loadParticles() {
         options: {
             background: {
                 color: {
-                    value: "transparent", // Background handled by CSS gradient
+                    value: "transparent",
                 },
             },
             fpsLimit: 60,
@@ -78,7 +78,7 @@ async function loadParticles() {
             },
             particles: {
                 color: {
-                    value: ["#00f2fe", "#4facfe", "#ff6b6b"], // Cosmic colors
+                    value: ["#00f2fe", "#4facfe", "#ff6b6b"],
                 },
                 links: {
                     color: "#ffffff",
@@ -119,7 +119,6 @@ async function loadParticles() {
     });
 }
 
-
 /**
  * Displays a temporary message to the user.
  * @param {string} message - The message to display.
@@ -129,7 +128,7 @@ function showMessage(message, type) {
     messageBox.textContent = message;
     messageBox.className = `message-box ${type} show`;
     setTimeout(() => {
-        messageBox.className = 'message-box'; // Hide after a delay
+        messageBox.className = 'message-box';
     }, 5000);
 }
 
@@ -154,18 +153,18 @@ async function loadSymbols() {
         }
         const data = await response.json();
         
-        stockSelect.innerHTML = ''; // Clear existing options
+        stockSelect.innerHTML = '';
 
         if (data.symbols && data.symbols.length > 0) {
-            data.symbols.sort(); // Sort symbols alphabetically
+            data.symbols.sort();
             data.symbols.forEach(symbol => {
                 const option = document.createElement('option');
                 option.value = symbol;
                 option.textContent = `📈 ${symbol}`;
                 stockSelect.appendChild(option);
             });
-            stockSelect.value = "RELIANCE"; // Set a common Indian stock as default
-            if (!stockSelect.value && data.symbols.length > 0) { // Fallback if default not found
+            stockSelect.value = "RELIANCE";
+            if (!stockSelect.value && data.symbols.length > 0) {
                 stockSelect.value = data.symbols[0];
             }
         } else {
@@ -196,12 +195,11 @@ async function loadStockDataAndCharts() {
     const indicator = indicatorSelect.value;
 
     if (!symbol) {
-        console.log("No symbol selected, skipping data load.");
         return;
     }
 
     toggleLoading(true);
-    showMessage("", ""); // Clear any previous messages
+    showMessage("", "");
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/stock/${symbol}?period=${period}`);
@@ -210,12 +208,11 @@ async function loadStockDataAndCharts() {
             throw new Error(errorData.detail || "Failed to fetch stock data from API.");
         }
         const data = await response.json();
-        const hist = data.history; // Array of objects
-        const info = data.info;    // Object
+        const hist = data.history;
+        const info = data.info;
 
         if (!hist || hist.length === 0) {
             showMessage("No data available for selected stock and period. Try a different period.", "error");
-            // Clear all displayed content if no data
             Plotly.purge(mainChartDiv);
             Plotly.purge(volumeChartDiv);
             Plotly.purge(returnsChartDiv);
@@ -225,7 +222,7 @@ async function loadStockDataAndCharts() {
             return;
         }
 
-        // Convert date strings to Date objects for Plotly.js
+        // Convert date strings to Date objects
         hist.forEach(d => {
             d.date = new Date(d.date);
         });
@@ -233,7 +230,7 @@ async function loadStockDataAndCharts() {
         // Render all sections
         renderMainChart(hist, symbol, chartType, indicator);
         renderVolumeBars(hist);
-        renderAnalyticsPie(); // Static data
+        renderAnalyticsPie();
         renderReturnsWave(hist);
         updateInfoMetrics(hist, info);
         showMessage("Stock data loaded successfully!", "success");
@@ -241,7 +238,6 @@ async function loadStockDataAndCharts() {
     } catch (error) {
         console.error("Error loading stock data:", error);
         showMessage(`Error loading stock data: ${error.message}`, "error");
-        // Clear all displayed content on error
         Plotly.purge(mainChartDiv);
         Plotly.purge(volumeChartDiv);
         Plotly.purge(returnsChartDiv);
@@ -263,7 +259,7 @@ function calculateSMA(data, windowSize) {
     const sma = [];
     for (let i = 0; i < data.length; i++) {
         if (i < windowSize - 1) {
-            sma.push(null); // Not enough data for the initial window
+            sma.push(null);
         } else {
             const sum = data.slice(i - windowSize + 1, i + 1).reduce((a, b) => a + b, 0);
             sma.push(sum / windowSize);
@@ -317,11 +313,11 @@ function renderMainChart(hist, symbol, chartType, indicator) {
         if (indicator === "SMA50") {
             smaPeriod = 50;
             smaValues = calculateSMA(closePrices, smaPeriod);
-            smaColor = '#FFD700'; // Gold
+            smaColor = '#FFD700';
         } else if (indicator === "SMA200") {
             smaPeriod = 200;
             smaValues = calculateSMA(closePrices, smaPeriod);
-            smaColor = '#90EE90'; // Light Green
+            smaColor = '#90EE90';
         }
 
         if (smaValues) {
@@ -337,7 +333,7 @@ function renderMainChart(hist, symbol, chartType, indicator) {
 
     const layout = {
         title: {
-            text: `<b>${symbol} ${chartType.toUpperCase()} ANALYSIS</b>`, // Corrected template literal
+            text: `<b>${symbol} ${chartType.toUpperCase()} ANALYSIS</b>`,
             font: { size: 24, color: 'var(--color-primary)' }
         },
         height: 500,
@@ -475,7 +471,7 @@ function renderReturnsWave(hist) {
  */
 function updateInfoMetrics(hist, info) {
     // Top Metrics
-    metricsContainer.innerHTML = ''; // Clear previous
+    metricsContainer.innerHTML = '';
     const topMetrics = {
         'Current Price': hist[hist.length - 1].Close,
         '52W High': info.fiftyTwoWeekHigh,
@@ -530,7 +526,7 @@ function updateInfoMetrics(hist, info) {
     }
 
     // Secondary Metrics
-    secondaryMetricsContainer.innerHTML = ''; // Clear previous
+    secondaryMetricsContainer.innerHTML = '';
     const secondaryMetrics = {
         'Dividend Yield': info.dividendYield,
         'Beta': info.beta,
@@ -619,7 +615,7 @@ async function loadNews() {
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    // Simulated news data (replace with actual API call in a real app)
+    // Simulated news data
     const simulatedNews = [
         {
             title: `Stocker analysts bullish on ${symbol}'s Q3 earnings.`,
@@ -651,7 +647,7 @@ async function loadNews() {
         }
     ];
 
-    newsList.innerHTML = ''; // Clear loading message
+    newsList.innerHTML = '';
 
     if (simulatedNews.length > 0) {
         simulatedNews.forEach(article => {
