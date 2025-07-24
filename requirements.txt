@@ -2,9 +2,11 @@ fastapi>=0.111.0
 uvicorn>=0.30.0
 yfinance>=0.2.18
 pandas>=1.5.0
-requests>=2.28.0
+requests==2.31.0 # Pinned version
 numpy>=1.23.0
+scipy>=1.10.0
 python-dotenv
 gunicorn>=21.0.0
 aiofiles>=23.0.0
-# Removed python-magic and python-magic-bin as they caused conflicts and might not be strictly necessary for static file serving.
+python-magic
+certifi>=2023.7.22 # NEW

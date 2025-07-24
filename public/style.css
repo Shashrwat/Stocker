@@ -1,3 +1,6 @@
+/* Stocker/public/style.css */
+
+/* --- Global Styles & Cosmic Background --- */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap');
 
 :root {
@@ -17,42 +20,47 @@
 html, body {
     margin: 0;
     padding: 0;
-    height: 100%;
-    overflow-x: hidden;
+    height: 100%; /* Ensure html and body take full height */
+    overflow-x: hidden; /* Prevent horizontal scroll */
     font-family: 'Roboto', sans-serif;
     color: white;
     box-sizing: border-box;
-    scroll-behavior: smooth;
+    scroll-behavior: smooth; /* Smooth scrolling for anchors */
+    
+    /* Cosmic background gradient */
     background: linear-gradient(-45deg,
         var(--color-dark-bg), var(--color-medium-bg), #2a2a6e, #3d3d8f,
         var(--color-dark-bg), var(--color-medium-bg));
-    background-size: 400% 400%;
-    animation: cosmic-gradient-animation 20s ease infinite;
+    background-size: 400% 400%; /* Larger background size for animation */
+    animation: cosmic-gradient-animation 20s ease infinite; /* New animation name for clarity */
 }
 
+/* Keyframes for the background gradient animation */
 @keyframes cosmic-gradient-animation {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
 }
 
+/* tsParticles container */
 #tsparticles {
-    position: fixed;
+    position: fixed; /* Fixed position to cover the entire viewport */
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: -1;
-    background-color: transparent;
+    z-index: -1; /* Send it to the background, behind content */
+    background-color: transparent; /* Particles draw over the animated background */
 }
 
+/* Main content wrapper to float above particles */
 .main-content-wrapper {
-    position: relative;
-    z-index: 1;
+    position: relative; /* Positioned above #tsparticles */
+    z-index: 1; /* Ensure content is above particles */
     width: 100%;
-    max-width: 1200px;
+    max-width: 1200px; /* Limit content width for better readability */
     margin: 0 auto;
-    padding: 20px 10px;
+    padding: 20px 10px; /* Overall padding for content */
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -74,8 +82,8 @@ html, body {
 }
 
 .header-text {
-    font-family: 'Orbitron', sans-serif;
-    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-family: 'Orbitron', sans-serif; /* Sci-fi look */
+    font-size: clamp(2rem, 5vw, 3.5rem); /* Responsive font size */
     color: var(--color-primary);
     animation: header-glow 2s ease-in-out infinite;
     margin-bottom: 0;
@@ -103,7 +111,7 @@ html, body {
     margin-bottom: 40px;
     width: 100%;
     max-width: 1000px;
-    background: rgba(0,0,0,0.2);
+    background: rgba(0,0,0,0.2); /* Slightly darker background for controls */
     padding: 25px;
     border-radius: var(--border-radius);
     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
@@ -126,6 +134,11 @@ html, body {
     letter-spacing: 0.5px;
 }
 
+/* Add to your style.css */
+.select-box, .select-box option {
+    color: #00f2fe !important;
+    background: #181c2b !important;
+}
 .select-box {
     background: var(--color-light-bg);
     border: 2px solid transparent;

@@ -1,6 +1,6 @@
 // Stocker/public/script.js
 
-// Determine the API base URL. On Vercel, this will be the same origin as your frontend.
+// Determine the API base URL. On Render, it will be the same origin as your frontend.
 const API_BASE_URL = window.location.origin;
 
 // DOM Elements
@@ -15,115 +15,137 @@ const mainChartDiv = document.getElementById('main-chart');
 const overviewSection = document.getElementById('overview-section');
 const secondaryMetricsContainer = document.getElementById('secondary-metrics-container');
 const volumeChartDiv = document.getElementById('volume-chart');
-const ownershipChartDiv = document('ownership-chart'); // Corrected typo: getElementById
+const ownershipChartDiv = document.getElementById('ownership-chart');
 const returnsChartDiv = document.getElementById('returns-chart');
 const aiInsightsSection = document.getElementById('ai-insights-section');
 const newsSection = document.getElementById('news-section');
 const newsList = document.getElementById('news-list');
 
+// --- EXTENSIVE LOGGING ADDED HERE ---
+console.log("script.js: Starting script execution.");
+
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log("script.js: DOMContentLoaded event fired. Starting initial async operations.");
+
     // Initialize tsParticles background
-    await loadParticles();
+    console.log("script.js: Calling loadParticles()...");
+    await loadParticles().catch(e => console.error("script.js: Error in loadParticles:", e));
+    console.log("script.js: loadParticles() finished.");
 
     // Initial load of symbols and data
-    await loadSymbols();
-    // Only load stock data and charts if a symbol is actually selected after loadSymbols
-    if (stockSelect.value) {
-        await loadStockDataAndCharts();
-        await loadNews(); // Load news on initial page load
-    } else {
-        showMessage("No stocks available to display. Please try again later.", "error");
-    }
+    console.log("script.js: Calling loadSymbols()...");
+    loadSymbols().then(() => {
+        console.log("script.js: loadSymbols() finished successfully. Calling loadStockDataAndCharts()...");
+        return loadStockDataAndCharts();
+    }).then(() => {
+        console.log("script.js: loadStockDataAndCharts() finished. Calling loadAISentiment()...");
+        return loadAISentiment();
+    }).then(() => {
+        console.log("script.js: loadAISentiment() finished. Calling loadNews()...");
+        return loadNews();
+    }).catch(error => {
+        console.error("script.js: Initialization chain failed:", error);
+        showMessage("Failed to load initial data. Please try again.", "error");
+    });
     
-    await loadAISentiment();
-
-
+    console.log("script.js: Setting up event listeners.");
     // Add event listeners for changes in select boxes
     stockSelect.addEventListener('change', async () => {
+        console.log("script.js: Stock selection changed. Calling loadStockDataAndCharts()...");
         await loadStockDataAndCharts();
+        console.log("script.js: Stock selection changed. Calling loadNews()...");
         await loadNews(); // Reload news when stock changes
     });
-    periodSelect.addEventListener('change', loadStockDataAndCharts);
-    chartSelect.addEventListener('change', loadStockDataAndCharts);
-    indicatorSelect.addEventListener('change', loadStockDataAndCharts);
+    periodSelect.addEventListener('change', () => { console.log("script.js: Period changed. Calling loadStockDataAndCharts()..."); loadStockDataAndCharts(); });
+    chartSelect.addEventListener('change', () => { console.log("script.js: Chart style changed. Calling loadStockDataAndCharts()..."); loadStockDataAndCharts(); });
+    indicatorSelect.addEventListener('change', () => { console.log("script.js: Indicator changed. Calling loadStockDataAndCharts()..."); loadStockDataAndCharts(); });
+
+    console.log("script.js: DOMContentLoaded block finished.");
 });
 
 /**
  * Initializes the tsParticles background animation.
  */
 async function loadParticles() {
-    await tsParticles.load({
-        id: "tsparticles",
-        options: {
-            background: {
-                color: {
-                    value: "transparent", // Background handled by CSS gradient
+    console.log("loadParticles(): Function started.");
+    try {
+        await tsParticles.load({
+            id: "tsparticles",
+            options: {
+                background: {
+                    color: {
+                        value: "transparent", // Background handled by CSS gradient
+                    },
                 },
-            },
-            fpsLimit: 60,
-            interactivity: {
-                events: {
-                    onClick: {
+                fpsLimit: 60,
+                interactivity: {
+                    events: {
+                        onClick: {
+                            enable: true,
+                            mode: "push",
+                        },
+                        onHover: {
+                            enable: true,
+                            mode: "repulse",
+                        },
+                        resize: true,
+                    },
+                    modes: {
+                        push: {
+                            quantity: 4,
+                        },
+                        repulse: {
+                            distance: 100,
+                            duration: 0.4,
+                        },
+                    },
+                },
+                particles: {
+                    color: {
+                        value: ["#00f2fe", "#4facfe", "#ff6b6b"], // Cosmic colors
+                    },
+                    links: {
+                        color: "#ffffff",
+                        distance: 150,
                         enable: true,
-                        mode: "push",
+                        opacity: 0.3,
+                        width: 1,
                     },
-                    onHover: {
+                    move: {
+                        direction: "none",
                         enable: true,
-                        mode: "repulse",
+                        outModes: {
+                            default: "bounce",
+                        },
+                        random: false,
+                        speed: 1,
+                        straight: false,
                     },
-                    resize: true,
+                    number: {
+                        density: {
+                            enable: true,
+                            area: 800,
+                        },
+                        value: 80,
+                    },
+                    opacity: {
+                        value: 0.5,
+                    },
+                    shape: {
+                        type: "circle",
+                    },
+                    size: {
+                        value: { min: 1, max: 5 },
+                    },
                 },
-                modes: {
-                    push: {
-                        quantity: 4,
-                    },
-                    repulse: {
-                        distance: 100,
-                        duration: 0.4,
-                    },
-                },
+                detectRetina: true,
             },
-            particles: {
-                color: {
-                    value: ["#00f2fe", "#4facfe", "#ff6b6b"], // Cosmic colors
-                },
-                links: {
-                    color: "#ffffff",
-                    distance: 150,
-                    enable: true,
-                    opacity: 0.3,
-                    width: 1,
-                },
-                move: {
-                    direction: "none",
-                    enable: true,
-                    outModes: {
-                        default: "bounce",
-                    },
-                    random: false,
-                    speed: 1,
-                    straight: false,
-                },
-                number: {
-                    density: {
-                        enable: true,
-                        area: 800,
-                    },
-                    value: 80,
-                },
-                opacity: {
-                    value: 0.5,
-                },
-                shape: {
-                    type: "circle",
-                },
-                size: {
-                    value: { min: 1, max: 5 },
-                },
-            },
-            detectRetina: true,
-        },
-    });
+        });
+        console.log("loadParticles(): tsParticles.load completed.");
+    } catch (e) {
+        console.error("loadParticles(): Error during tsParticles.load:", e);
+        throw e; // Re-throw to propagate error
+    }
 }
 
 
@@ -133,6 +155,7 @@ async function loadParticles() {
  * @param {string} type - 'success' or 'error'.
  */
 function showMessage(message, type) {
+    // console.log(`showMessage(): Displaying ${type} message: ${message}`);
     messageBox.textContent = message;
     messageBox.className = `message-box ${type} show`;
     setTimeout(() => {
@@ -145,6 +168,7 @@ function showMessage(message, type) {
  * @param {boolean} show - True to show, false to hide.
  */
 function toggleLoading(show) {
+    // console.log(`toggleLoading(): ${show ? 'Showing' : 'Hiding'} spinner.`);
     loadingIndicator.style.display = show ? 'flex' : 'none';
 }
 
@@ -152,57 +176,65 @@ function toggleLoading(show) {
  * Fetches stock symbols from the backend API and populates the stock select dropdown.
  */
 async function loadSymbols() {
+    console.log("loadSymbols(): Function started.");
     toggleLoading(true);
     try {
-        const response = await fetch(API_BASE_URL + "/api/symbols");
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || "Failed to fetch symbols from API.");
+        console.log(`loadSymbols(): Fetching from ${API_BASE_URL}/api/symbols`);
+        const response = await fetch(`${API_BASE_URL}/api/symbols`);
+        let data;
+        try {
+            data = await response.json();
+        } catch (jsonErr) {
+            data = { detail: "Invalid JSON from API" };
         }
-        const data = await response.json();
-        
-        stockSelect.innerHTML = ''; // Clear existing options
+        console.log("loadSymbols(): API data received:", data);
 
-        if (data.symbols && data.symbols.length > 0) {
-            data.symbols.sort(); // Sort symbols alphabetically
-            data.symbols.forEach(symbol => {
-                const option = document.createElement('option');
-                option.value = symbol;
-                option.textContent = `📈 ${symbol}`;
-                stockSelect.appendChild(option);
-            });
-            // Try to set RELIANCE as default, fallback to first available symbol
+        if (!response.ok) {
+            console.error("loadSymbols(): API response not OK.", data);
+            throw new Error(data.detail || `Failed to fetch symbols: HTTP status ${response.status}`);
+        }
+
+        stockSelect.innerHTML = '';
+        const loadingOption = document.createElement('option');
+        loadingOption.value = "";
+        loadingOption.textContent = "Loading symbols...";
+        loadingOption.disabled = true;
+        loadingOption.selected = true;
+        stockSelect.appendChild(loadingOption);
+
+        if (data.symbols && Array.isArray(data.symbols) && data.symbols.length > 0) {
+            stockSelect.innerHTML = '';
+            
+data.symbols.slice(0, 100).forEach(symbol => {
+    const option = document.createElement('option');
+    option.value = symbol;
+    option.textContent = `📈 ${symbol}`;
+    stockSelect.appendChild(option);
+});
+// ...existing code...
             if (data.symbols.includes("RELIANCE")) {
                 stockSelect.value = "RELIANCE";
-            } else if (data.symbols.length > 0) {
-                stockSelect.value = data.symbols[0]; // Set the first symbol if RELIANCE not found
+            } else {
+                stockSelect.value = data.symbols[0];
             }
-            // If after all this, no value is set, ensure an empty default is shown
-            if (!stockSelect.value && data.symbols.length === 0) {
-                const noDataOption = document.createElement('option');
-                noDataOption.value = "";
-                noDataOption.textContent = "No symbols found.";
-                noDataOption.disabled = true;
-                noDataOption.selected = true;
-                stockSelect.appendChild(noDataOption);
-                showMessage("No stock symbols found to display. The backend might be experiencing issues.", "error");
-            }
-
+            showMessage("Stock symbols loaded successfully!", "success");
         } else {
+            stockSelect.innerHTML = '';
             const noDataOption = document.createElement('option');
             noDataOption.value = "";
             noDataOption.textContent = "No symbols found.";
             noDataOption.disabled = true;
             noDataOption.selected = true;
             stockSelect.appendChild(noDataOption);
-            showMessage("No stock symbols found. Please try again later.", "error");
+            showMessage("No stock symbols found. The API might be empty or unavailable.", "error");
         }
     } catch (error) {
-        console.error("Error loading symbols:", error);
-        showMessage(`Error loading symbols: ${error.message}. Check backend logs.`, "error");
+        console.error("loadSymbols(): Critical error:", error);
+        showMessage(`Error loading symbols: ${error.message}. Check browser console.`, "error");
         stockSelect.innerHTML = '<option value="" disabled selected>Error loading symbols</option>';
     } finally {
         toggleLoading(false);
+        console.log("loadSymbols(): Function finished.");
     }
 }
 
@@ -210,20 +242,14 @@ async function loadSymbols() {
  * Fetches stock data from the backend API and renders all charts and metrics.
  */
 async function loadStockDataAndCharts() {
+    console.log("loadStockDataAndCharts(): Function started.");
     const symbol = stockSelect.value;
     const period = periodSelect.value;
     const chartType = chartSelect.value;
     const indicator = indicatorSelect.value;
 
     if (!symbol) {
-        console.log("No symbol selected, skipping data load.");
-        // Clear all displayed content if no symbol is selected
-        Plotly.purge(mainChartDiv);
-        Plotly.purge(volumeChartDiv);
-        Plotly.purge(returnsChartDiv);
-        metricsContainer.innerHTML = '';
-        secondaryMetricsContainer.innerHTML = '';
-        overviewSection.style.display = 'none';
+        console.log("loadStockDataAndCharts(): No symbol selected, skipping data load.");
         return;
     }
 
@@ -231,16 +257,23 @@ async function loadStockDataAndCharts() {
     showMessage("", ""); // Clear any previous messages
 
     try {
+        console.log(`loadStockDataAndCharts(): Fetching from ${API_BASE_URL}/api/stock/${symbol}?period=${period}`);
         const response = await fetch(`${API_BASE_URL}/api/stock/${symbol}?period=${period}`);
+        console.log("loadStockDataAndCharts(): Fetch response received.", response);
+
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || "Failed to fetch stock data from API.");
+            const errorData = await response.json().catch(() => ({ detail: "Unknown API error" }));
+            console.error("loadStockDataAndCharts(): API response not OK.", errorData);
+            throw new Error(errorData.detail || `Failed to fetch stock data: HTTP status ${response.status}`);
         }
         const data = await response.json();
+        console.log("loadStockDataAndCharts(): API data received:", data);
+
         const hist = data.history; // Array of objects
         const info = data.info;    // Object
 
         if (!hist || hist.length === 0) {
+            console.warn("loadStockDataAndCharts(): No historical data found.", data);
             showMessage("No data available for selected stock and period. Try a different period.", "error");
             // Clear all displayed content if no data
             Plotly.purge(mainChartDiv);
@@ -258,16 +291,18 @@ async function loadStockDataAndCharts() {
         });
         
         // Render all sections
+        console.log("loadStockDataAndCharts(): Rendering charts and metrics...");
         renderMainChart(hist, symbol, chartType, indicator);
         renderVolumeBars(hist);
         renderAnalyticsPie(); // Static data
         renderReturnsWave(hist);
         updateInfoMetrics(hist, info);
         showMessage("Stock data loaded successfully!", "success");
+        console.log("loadStockDataAndCharts(): All rendering complete.");
 
     } catch (error) {
-        console.error("Error loading stock data:", error);
-        showMessage(`Error loading stock data: ${error.message}. Check backend logs.`, "error");
+        console.error("loadStockDataAndCharts(): Critical error:", error);
+        showMessage(`Error loading stock data: ${error.message}`, "error");
         // Clear all displayed content on error
         Plotly.purge(mainChartDiv);
         Plotly.purge(volumeChartDiv);
@@ -277,6 +312,7 @@ async function loadStockDataAndCharts() {
         overviewSection.style.display = 'none';
     } finally {
         toggleLoading(false);
+        console.log("loadStockDataAndCharts(): Function finished.");
     }
 }
 
@@ -287,6 +323,7 @@ async function loadStockDataAndCharts() {
  * @returns {Array<number|null>} Array of SMA values, with nulls for initial period.
  */
 function calculateSMA(data, windowSize) {
+    // console.log("calculateSMA(): Calculating SMA...");
     const sma = [];
     for (let i = 0; i < data.length; i++) {
         if (i < windowSize - 1) {
@@ -307,6 +344,7 @@ function calculateSMA(data, windowSize) {
  * @param {string} indicator - Indicator to add (e.g., 'SMA50', 'SMA200').
  */
 function renderMainChart(hist, symbol, chartType, indicator) {
+    // console.log("renderMainChart(): Rendering main chart...");
     let traces = [];
     
     // Main price trace
@@ -401,6 +439,7 @@ function renderMainChart(hist, symbol, chartType, indicator) {
  * @param {Array<Object>} hist - Historical data.
  */
 function renderVolumeBars(hist) {
+    // console.log("renderVolumeBars(): Rendering volume chart...");
     const trace = {
         x: hist.map(d => d.date),
         y: hist.map(d => d.Volume),
@@ -431,6 +470,7 @@ function renderVolumeBars(hist) {
  * Renders the ownership structure pie chart (static data).
  */
 function renderAnalyticsPie() {
+    // console.log("renderAnalyticsPie(): Rendering ownership chart...");
     const trace = {
         labels: ['Institutional', 'Retail', 'Insider'],
         values: [45, 35, 20],
@@ -461,6 +501,7 @@ function renderAnalyticsPie() {
  * @param {Array<Object>} hist - Historical data.
  */
 function renderReturnsWave(hist) {
+    // console.log("renderReturnsWave(): Rendering returns chart...");
     const closePrices = hist.map(d => d.Close);
     if (closePrices.length < 2) {
         Plotly.purge(returnsChartDiv);
@@ -501,6 +542,7 @@ function renderReturnsWave(hist) {
  * @param {Object} info - Company information.
  */
 function updateInfoMetrics(hist, info) {
+    // console.log("updateInfoMetrics(): Updating metrics...");
     // Top Metrics
     metricsContainer.innerHTML = ''; // Clear previous
     const topMetrics = {
@@ -570,7 +612,7 @@ function updateInfoMetrics(hist, info) {
         if (value !== undefined && value !== null) {
             if (typeof value === 'number') {
                 if (metric.includes('Yield')) {
-                    displayValue = (value * 100).toFixed(2) + '%';
+                    displayValue = `${(value * 100).toFixed(2)}%`;
                 } else {
                     displayValue = value.toFixed(2);
                 }
@@ -591,13 +633,17 @@ function updateInfoMetrics(hist, info) {
  * Fetches and displays simulated AI market insights.
  */
 async function loadAISentiment() {
+    console.log("loadAISentiment(): Function started.");
     try {
         const response = await fetch(`${API_BASE_URL}/api/sentiment`);
+        console.log("loadAISentiment(): Fetch response received.", response);
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || "Failed to fetch AI sentiment.");
+            const errorData = await response.json().catch(() => ({ detail: "Unknown API error" }));
+            console.error("loadAISentiment(): API response not OK.", errorData);
+            throw new Error(errorData.detail || `Failed to fetch AI sentiment: HTTP status ${response.status}`);
         }
         const data = await response.json();
+        console.log("loadAISentiment(): API data received:", data);
 
         const forecastColorClass = data.forecast >= 0 ? 'positive' : 'negative';
         const forecastIcon = data.forecast >= 0 ? '<i class="fas fa-arrow-up"></i>' : '<i class="fas fa-arrow-down"></i>';
@@ -623,8 +669,9 @@ async function loadAISentiment() {
                 Always conduct your own research.
             </div>
         `;
+        console.log("loadAISentiment(): Rendering complete.");
     } catch (error) {
-        console.error("Error fetching AI sentiment:", error);
+        console.error("loadAISentiment(): Critical error:", error);
         aiInsightsSection.innerHTML = `<p style="color: var(--color-accent); text-align: center;">Failed to load AI insights.</p>`;
     }
 }
@@ -633,14 +680,16 @@ async function loadAISentiment() {
  * Simulates fetching news articles for the selected stock.
  */
 async function loadNews() {
+    console.log("loadNews(): Function started.");
     const symbol = stockSelect.value;
     if (!symbol) {
+        console.log("loadNews(): No symbol selected, hiding news section.");
         newsSection.style.display = 'none';
         return;
     }
 
     newsSection.style.display = 'block';
-    document.getElementById('news-symbol').textContent = `${symbol}`;
+    document.getElementById('news-symbol').textContent = `for ${symbol}`;
     newsList.innerHTML = '<p style="text-align: center; color: #ccc;">Fetching latest news...</p>';
 
     // Simulate API call delay
@@ -650,28 +699,28 @@ async function loadNews() {
     const simulatedNews = [
         {
             title: `Stocker analysts bullish on ${symbol}'s Q3 earnings.`,
-            summary: "Experts predict strong growth driven by market demand.",
+            summary: `Experts predict strong growth driven by market demand.`,
             url: `https://example.com/news/${symbol}-q3-earnings`,
             source: 'Stocker Daily',
             date: '2024-07-23'
         },
         {
             title: `${symbol} announces new strategic partnership.`,
-            summary: "Collaboration expected to open new revenue streams.",
+            summary: `Collaboration expected to open new revenue streams.`,
             url: `https://example.com/news/${symbol}-partnership`,
             source: 'Global Finance News',
             date: '2024-07-22'
         },
         {
             title: `Market volatility impacts ${symbol} stock performance.`,
-            summary: "Analysts advise caution amid broader economic concerns.",
+            summary: `Analysts advise caution amid broader economic concerns.`,
             url: `https://example.com/news/${symbol}-volatility`,
             source: 'Market Watch',
             date: '2024-07-21'
         },
         {
             title: `Innovation at ${symbol}: A deep dive into their R&D.`,
-            summary: "Company's commitment to innovation could drive long-term value.",
+            summary: `Company's commitment to innovation could drive long-term value.`,
             url: `https://example.com/news/${symbol}-innovation`,
             source: 'Tech Investor',
             date: '2024-07-20'
@@ -681,6 +730,7 @@ async function loadNews() {
     newsList.innerHTML = ''; // Clear loading message
 
     if (simulatedNews.length > 0) {
+        console.log(`loadNews(): ${simulatedNews.length} simulated news articles.`);
         simulatedNews.forEach(article => {
             const articleDiv = document.createElement('div');
             articleDiv.className = 'news-article';
@@ -692,6 +742,11 @@ async function loadNews() {
             newsList.appendChild(articleDiv);
         });
     } else {
+        console.warn("loadNews(): No simulated news articles found.");
         newsList.innerHTML = '<p style="text-align: center; color: #ccc;">No recent news found for this stock.</p>';
     }
+    console.log("loadNews(): Function finished.");
 }
+window.addEventListener('DOMContentLoaded', () => {
+    loadSymbols();
+});

@@ -1,2 +1,2 @@
-# Stocker/api/_init_.py
-# This file can be empty
+# Stocker/api/__init__.py
+# This file can be empty
