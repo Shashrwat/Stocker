@@ -1,12 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap');
 
 :root {
-    --color-primary: #00f2fe;
-    --color-secondary: #4facfe;
-    --color-accent: #ff6b6b;
-    --color-dark-bg: #0f0c29;
-    --color-medium-bg: #1a1a4a;
-    --color-light-bg: rgba(0,0,0,0.3);
+    --color-primary: #00f2fe; /* Bright Cyan */
+    --color-secondary: #4facfe; /* Light Blue */
+    --color-accent: #ff6b6b; /* Reddish Pink */
+    --color-dark-bg: #0f0c29; /* Deep Purple-Blue */
+    --color-medium-bg: #1a1a4a; /* Medium Purple-Blue */
+    --color-light-bg: rgba(0,0,0,0.3); /* Translucent dark */
     --border-radius: 15px;
     --transition-speed: 0.4s;
     --box-shadow-light: 0 8px 16px rgba(0, 242, 254, 0.1);
@@ -550,7 +550,7 @@ html, body {
 }
 
 .footer .disclaimer {
-    animation: none;
+    animation: none; /* Disable pulse for footer disclaimer */
     margin-top: 10px;
     font-style: normal;
 }
@@ -573,7 +573,7 @@ html, body {
         min-width: unset;
     }
     .metrics-grid, .charts-row, .news-list {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr; /* Stack elements on small screens */
     }
     .metric-glow, .plot-container, .ai-pulse, .news-section {
         padding: 15px;
