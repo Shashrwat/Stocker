@@ -4,8 +4,9 @@ yfinance>=0.2.18
 pandas>=1.5.0
 requests>=2.28.0
 numpy>=1.23.0
-scipy>=1.10.0
-python-multipart
-python-magic
-aiofiles>=23.0.0
+# scipy>=1.10.0 # Removed as it wasn't used in index.py
+python-dotenv
 gunicorn>=21.0.0
+aiofiles>=23.0.0
+python-magic # Keep for robust MIME type detection
+python-magic-bin # Keep for Windows compatibility, helpful for Linux as well
