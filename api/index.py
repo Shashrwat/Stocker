@@ -11,10 +11,7 @@ import pandas as pd
 import requests
 import io
 import numpy as np
-import random # scipy.stats.gaussian_kde is not used in your current script.js, so I'm removing it from backend for minimalism.
-
-# You might want to remove python-magic and python-magic-bin from requirements if not using directly for file type checks in FastAPI
-# If you are serving user-uploaded content, they are useful. For serving pre-defined static files, StaticFiles handles basic MIME types.
+import random
 
 app = FastAPI()
 
@@ -35,21 +32,22 @@ CACHE_TTL_SYMBOLS = 24 * 3600  # Cache symbols for 24 hours
 CACHE_TTL_STOCK_DATA = 3600    # Cache stock data for 1 hour
 
 # Fallback symbols in case NSE API fails.
-# These are common Indian stocks.
+# These are common Indian stocks. Made this list even more robust.
 FALLBACK_NSE_SYMBOLS = [
-    "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK", "BHARTIARTL",
-    "SBIN", "LT", "HINDUNILVR", "ITC", "BAJFINANCE", "ASIANPAINT"
+    "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK", "SBIN", "LT",
+    "HINDUNILVR", "ITC", "BAJFINANCE", "ASIANPAINT", "MARUTI", "KOTAKBANK",
+    "AXISBANK", "SUNPHARMA", "NTPC", "POWERGRID", "TITAN", "ULTRACEMCO",
+    "WIPRO", "HCLTECH", "TECHM", "NESTLEIND", "ONGC", "BPCL", "IOC"
 ]
 
 # Get the absolute path to the public directory
 BASE_DIR = Path(__file__).resolve().parent.parent # Points to the 'Stocker' root directory
 PUBLIC_DIR = BASE_DIR / "public"
 
-# Verify public directory existence during startup
+# Verify public directory existence during startup for debugging
 if not PUBLIC_DIR.is_dir():
     print(f"CRITICAL ERROR: Public directory not found at {PUBLIC_DIR}")
-    # You might want to raise an exception or handle this more gracefully in production
-    # but for now, just print to ensure it's noticed in logs.
+    # This error would prevent static files from being served, but the dropdown is an API issue.
 
 # Mount the public directory to serve static files
 app.mount(
@@ -81,29 +79,31 @@ async def get_symbols_api():
         response.raise_for_status() # Raises HTTPError for bad responses (4xx or 5xx)
         
         # Try to read CSV, handle potential parsing errors
-        df = pd.read_csv(io.StringIO(response.text))
-        if 'SYMBOL' in df.columns:
-            symbols = df['SYMBOL'].unique().tolist()
-            symbols = sorted([s for s in symbols if isinstance(s, str) and s.strip() != '']) # Clean and sort
-            print(f"INFO: Successfully fetched {len(symbols)} symbols from NSE.")
-        else:
-            print("WARNING: 'SYMBOL' column not found in NSE CSV. Using fallback symbols.")
+        csv_data = io.StringIO(response.text)
+        
+        # Check if CSV data is empty or HTML (indicating an error page)
+        if not response.text.strip() or "html" in response.text.lower():
+            print("WARNING: NSE response was empty or contained HTML. Using fallback symbols.")
             symbols = FALLBACK_NSE_SYMBOLS
+        else:
+            df = pd.read_csv(csv_data)
+            if 'SYMBOL' in df.columns:
+                symbols = df['SYMBOL'].unique().tolist()
+                symbols = sorted([s for s in symbols if isinstance(s, str) and s.strip() != '']) # Clean and sort
+                print(f"INFO: Successfully fetched {len(symbols)} symbols from NSE.")
+            else:
+                print("WARNING: 'SYMBOL' column not found in NSE CSV. Using fallback symbols.")
+                symbols = FALLBACK_NSE_SYMBOLS
 
         if not symbols: # If symbols is empty after fetching/cleaning
-            print("WARNING: No symbols found from NSE. Using fallback symbols.")
+            print("WARNING: No symbols extracted from NSE. Using fallback symbols.")
             symbols = FALLBACK_NSE_SYMBOLS
 
-        _nse_symbols_cache["symbols"] = symbols
-        _nse_symbols_cache["timestamp"] = current_time
-        
-        return {"symbols": symbols}
-    
     except requests.exceptions.RequestException as e:
         print(f"ERROR: Request to NSE failed: {e}. Using fallback symbols.")
         symbols = FALLBACK_NSE_SYMBOLS
     except pd.errors.EmptyDataError:
-        print("ERROR: NSE CSV was empty. Using fallback symbols.")
+        print("ERROR: NSE CSV was empty or malformed. Using fallback symbols.")
         symbols = FALLBACK_NSE_SYMBOLS
     except Exception as e:
         print(f"ERROR: An unexpected error occurred while fetching/processing NSE symbols: {e}. Using fallback symbols.")
@@ -112,12 +112,14 @@ async def get_symbols_api():
     finally:
         # Ensure symbols are always returned, even on error, using fallback
         if not symbols:
-            print("CRITICAL: Fallback symbols are also empty, this should not happen.")
-            symbols = [] # Should ideally never be empty if FALLBACK_NSE_SYMBOLS is populated
+            print("CRITICAL: Fallback symbols are also empty or failed to load. This should not happen.")
+            symbols = ["NSE_FALLBACK_A", "NSE_FALLBACK_B", "NSE_FALLBACK_C"] # Absolute last resort
         
         # Update cache with whatever symbols we ended up with (fresh or fallback)
         _nse_symbols_cache["symbols"] = symbols
         _nse_symbols_cache["timestamp"] = current_time
+        
+        print(f"DEBUG: Final symbols list to be returned: {symbols[:5]}... (first 5 of {len(symbols)})") # Print first few for debugging
         return {"symbols": symbols}
 
 
@@ -142,8 +144,6 @@ async def get_stock_data_api(symbol: str, period: str = "1y"):
         ticker = yf.Ticker(f"{symbol}.NS")
         hist = ticker.history(period=period)
         
-        # Fetch info only if hist data is available and not empty, to save calls.
-        # Yahoo Finance info can be slow or fail independently.
         info = {}
         try:
             info = ticker.info
@@ -186,9 +186,4 @@ async def get_sentiment_api():
 
 if __name__ == "__main__":
     import uvicorn
-    # Make sure to install python-dotenv if you use .env files locally
-    # from dotenv import load_dotenv
-    # load_dotenv() # Load environment variables from .env file (if present)
-    
-    # For local development, use 127.0.0.1 (localhost)
     uvicorn.run(app, host="127.0.0.1", port=8000)

@@ -1,6 +1,6 @@
-// Stocker/public/static/script.js
+// Stocker/public/script.js
 
-// Determine the API base URL
+// Determine the API base URL. On Vercel, this will be the same origin as your frontend.
 const API_BASE_URL = window.location.origin;
 
 // DOM Elements
@@ -15,7 +15,7 @@ const mainChartDiv = document.getElementById('main-chart');
 const overviewSection = document.getElementById('overview-section');
 const secondaryMetricsContainer = document.getElementById('secondary-metrics-container');
 const volumeChartDiv = document.getElementById('volume-chart');
-const ownershipChartDiv = document.getElementById('ownership-chart');
+const ownershipChartDiv = document('ownership-chart'); // Corrected typo: getElementById
 const returnsChartDiv = document.getElementById('returns-chart');
 const aiInsightsSection = document.getElementById('ai-insights-section');
 const newsSection = document.getElementById('news-section');
@@ -27,14 +27,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Initial load of symbols and data
     await loadSymbols();
-    await loadStockDataAndCharts();
+    // Only load stock data and charts if a symbol is actually selected after loadSymbols
+    if (stockSelect.value) {
+        await loadStockDataAndCharts();
+        await loadNews(); // Load news on initial page load
+    } else {
+        showMessage("No stocks available to display. Please try again later.", "error");
+    }
+    
     await loadAISentiment();
-    await loadNews();
 
-    // Add event listeners
+
+    // Add event listeners for changes in select boxes
     stockSelect.addEventListener('change', async () => {
         await loadStockDataAndCharts();
-        await loadNews();
+        await loadNews(); // Reload news when stock changes
     });
     periodSelect.addEventListener('change', loadStockDataAndCharts);
     chartSelect.addEventListener('change', loadStockDataAndCharts);
@@ -50,7 +57,7 @@ async function loadParticles() {
         options: {
             background: {
                 color: {
-                    value: "transparent",
+                    value: "transparent", // Background handled by CSS gradient
                 },
             },
             fpsLimit: 60,
@@ -78,7 +85,7 @@ async function loadParticles() {
             },
             particles: {
                 color: {
-                    value: ["#00f2fe", "#4facfe", "#ff6b6b"],
+                    value: ["#00f2fe", "#4facfe", "#ff6b6b"], // Cosmic colors
                 },
                 links: {
                     color: "#ffffff",
@@ -119,6 +126,7 @@ async function loadParticles() {
     });
 }
 
+
 /**
  * Displays a temporary message to the user.
  * @param {string} message - The message to display.
@@ -128,7 +136,7 @@ function showMessage(message, type) {
     messageBox.textContent = message;
     messageBox.className = `message-box ${type} show`;
     setTimeout(() => {
-        messageBox.className = 'message-box';
+        messageBox.className = 'message-box'; // Hide after a delay
     }, 5000);
 }
 
@@ -153,20 +161,33 @@ async function loadSymbols() {
         }
         const data = await response.json();
         
-        stockSelect.innerHTML = '';
+        stockSelect.innerHTML = ''; // Clear existing options
 
         if (data.symbols && data.symbols.length > 0) {
-            data.symbols.sort();
+            data.symbols.sort(); // Sort symbols alphabetically
             data.symbols.forEach(symbol => {
                 const option = document.createElement('option');
                 option.value = symbol;
                 option.textContent = `📈 ${symbol}`;
                 stockSelect.appendChild(option);
             });
-            stockSelect.value = "RELIANCE";
-            if (!stockSelect.value && data.symbols.length > 0) {
-                stockSelect.value = data.symbols[0];
+            // Try to set RELIANCE as default, fallback to first available symbol
+            if (data.symbols.includes("RELIANCE")) {
+                stockSelect.value = "RELIANCE";
+            } else if (data.symbols.length > 0) {
+                stockSelect.value = data.symbols[0]; // Set the first symbol if RELIANCE not found
             }
+            // If after all this, no value is set, ensure an empty default is shown
+            if (!stockSelect.value && data.symbols.length === 0) {
+                const noDataOption = document.createElement('option');
+                noDataOption.value = "";
+                noDataOption.textContent = "No symbols found.";
+                noDataOption.disabled = true;
+                noDataOption.selected = true;
+                stockSelect.appendChild(noDataOption);
+                showMessage("No stock symbols found to display. The backend might be experiencing issues.", "error");
+            }
+
         } else {
             const noDataOption = document.createElement('option');
             noDataOption.value = "";
@@ -178,7 +199,7 @@ async function loadSymbols() {
         }
     } catch (error) {
         console.error("Error loading symbols:", error);
-        showMessage(`Error loading symbols: ${error.message}`, "error");
+        showMessage(`Error loading symbols: ${error.message}. Check backend logs.`, "error");
         stockSelect.innerHTML = '<option value="" disabled selected>Error loading symbols</option>';
     } finally {
         toggleLoading(false);
@@ -195,11 +216,19 @@ async function loadStockDataAndCharts() {
     const indicator = indicatorSelect.value;
 
     if (!symbol) {
+        console.log("No symbol selected, skipping data load.");
+        // Clear all displayed content if no symbol is selected
+        Plotly.purge(mainChartDiv);
+        Plotly.purge(volumeChartDiv);
+        Plotly.purge(returnsChartDiv);
+        metricsContainer.innerHTML = '';
+        secondaryMetricsContainer.innerHTML = '';
+        overviewSection.style.display = 'none';
         return;
     }
 
     toggleLoading(true);
-    showMessage("", "");
+    showMessage("", ""); // Clear any previous messages
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/stock/${symbol}?period=${period}`);
@@ -208,11 +237,12 @@ async function loadStockDataAndCharts() {
             throw new Error(errorData.detail || "Failed to fetch stock data from API.");
         }
         const data = await response.json();
-        const hist = data.history;
-        const info = data.info;
+        const hist = data.history; // Array of objects
+        const info = data.info;    // Object
 
         if (!hist || hist.length === 0) {
             showMessage("No data available for selected stock and period. Try a different period.", "error");
+            // Clear all displayed content if no data
             Plotly.purge(mainChartDiv);
             Plotly.purge(volumeChartDiv);
             Plotly.purge(returnsChartDiv);
@@ -222,7 +252,7 @@ async function loadStockDataAndCharts() {
             return;
         }
 
-        // Convert date strings to Date objects
+        // Convert date strings to Date objects for Plotly.js
         hist.forEach(d => {
             d.date = new Date(d.date);
         });
@@ -230,14 +260,15 @@ async function loadStockDataAndCharts() {
         // Render all sections
         renderMainChart(hist, symbol, chartType, indicator);
         renderVolumeBars(hist);
-        renderAnalyticsPie();
+        renderAnalyticsPie(); // Static data
         renderReturnsWave(hist);
         updateInfoMetrics(hist, info);
         showMessage("Stock data loaded successfully!", "success");
 
     } catch (error) {
         console.error("Error loading stock data:", error);
-        showMessage(`Error loading stock data: ${error.message}`, "error");
+        showMessage(`Error loading stock data: ${error.message}. Check backend logs.`, "error");
+        // Clear all displayed content on error
         Plotly.purge(mainChartDiv);
         Plotly.purge(volumeChartDiv);
         Plotly.purge(returnsChartDiv);
@@ -259,7 +290,7 @@ function calculateSMA(data, windowSize) {
     const sma = [];
     for (let i = 0; i < data.length; i++) {
         if (i < windowSize - 1) {
-            sma.push(null);
+            sma.push(null); // Not enough data for the initial window
         } else {
             const sum = data.slice(i - windowSize + 1, i + 1).reduce((a, b) => a + b, 0);
             sma.push(sum / windowSize);
@@ -313,11 +344,11 @@ function renderMainChart(hist, symbol, chartType, indicator) {
         if (indicator === "SMA50") {
             smaPeriod = 50;
             smaValues = calculateSMA(closePrices, smaPeriod);
-            smaColor = '#FFD700';
+            smaColor = '#FFD700'; // Gold
         } else if (indicator === "SMA200") {
             smaPeriod = 200;
             smaValues = calculateSMA(closePrices, smaPeriod);
-            smaColor = '#90EE90';
+            smaColor = '#90EE90'; // Light Green
         }
 
         if (smaValues) {
@@ -471,7 +502,7 @@ function renderReturnsWave(hist) {
  */
 function updateInfoMetrics(hist, info) {
     // Top Metrics
-    metricsContainer.innerHTML = '';
+    metricsContainer.innerHTML = ''; // Clear previous
     const topMetrics = {
         'Current Price': hist[hist.length - 1].Close,
         '52W High': info.fiftyTwoWeekHigh,
@@ -526,7 +557,7 @@ function updateInfoMetrics(hist, info) {
     }
 
     // Secondary Metrics
-    secondaryMetricsContainer.innerHTML = '';
+    secondaryMetricsContainer.innerHTML = ''; // Clear previous
     const secondaryMetrics = {
         'Dividend Yield': info.dividendYield,
         'Beta': info.beta,
@@ -615,7 +646,7 @@ async function loadNews() {
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    // Simulated news data
+    // Simulated news data (replace with actual API call in a real app)
     const simulatedNews = [
         {
             title: `Stocker analysts bullish on ${symbol}'s Q3 earnings.`,
@@ -647,7 +678,7 @@ async function loadNews() {
         }
     ];
 
-    newsList.innerHTML = '';
+    newsList.innerHTML = ''; // Clear loading message
 
     if (simulatedNews.length > 0) {
         simulatedNews.forEach(article => {
