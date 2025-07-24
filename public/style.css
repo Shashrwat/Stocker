@@ -190,9 +190,7 @@ html, body {
 }
 
 /* Datalist (for stock suggestions) */
-datalist {
-    /* Datalist itself cannot be styled directly, but its options can inherit some styles from the input */
-}
+/* Datalist itself cannot be styled directly, but its options can inherit some styles from the input */
 
 /* --- Loading Indicator --- */
 .loading-spinner {
