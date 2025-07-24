@@ -1,9 +1,9 @@
 # Stocker/api/index.py
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles # NEW
-from starlette.responses import FileResponse # NEW
-from pathlib import Path # NEW
+from fastapi.staticfiles import StaticFiles
+from starlette.responses import FileResponse # Used for serving index.html directly
+from pathlib import Path
 
 import yfinance as yf
 import pandas as pd
@@ -17,7 +17,7 @@ import datetime
 
 app = FastAPI()
 
-# Configure CORS for your frontend
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[""], # WARNING: In production, change "" to your specific frontend URL(s)
@@ -32,17 +32,15 @@ _stock_data_cache = {} # key: (symbol, period) -> {"history": DataFrame, "info":
 CACHE_TTL_SYMBOLS = 24 * 3600 # 24 hours in seconds
 CACHE_TTL_STOCK_DATA = 3600 # 1 hour in seconds
 
-
-# NEW: Mount the 'public' directory to serve static files
-# Make sure the 'public' directory is copied to the root of your deployed app
+# --- IMPORTANT: Mount StaticFiles FIRST, before any other routes if possible ---
+# This ensures that requests for /static/... are handled by the static file server
+# before potentially being caught by other API routes.
+# The directory is 'public' relative to the root of your deployed application.
 app.mount("/static", StaticFiles(directory="public"), name="static")
 
-# NEW: Serve the main index.html file at the root URL
-@app.get("/")
-async def serve_index():
-    return FileResponse(Path("public/index.html"))
-
-# Existing API routes from previous versions
+# --- API Endpoints ---
+# These should generally come AFTER static file mounts to avoid conflicts if paths overlap
+# (though /api is distinct from /static, order is still good practice).
 
 @app.get("/api/symbols")
 async def get_symbols_api():
@@ -115,7 +113,18 @@ async def get_sentiment_api():
         "forecast": forecast
     }
 
+# --- Serve the main index.html file at the root URL (This must be the LAST route) ---
+# This ensures that any request not caught by /static or /api goes to index.html
+@app.get("/{full_path:path}") # This route handles all other paths
+async def serve_all_paths(full_path: str):
+    # If the path is not a file that exists in 'public',
+    # it defaults to serving index.html (for single-page app routing)
+    file_path = Path("public") / full_path
+    if file_path.is_file():
+        return FileResponse(file_path)
+    return FileResponse(Path("public/index.html"))
+
 # This part is for local development with Uvicorn
-if __name__ == "__main_":
+if _name_ == "_main_":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
