@@ -34,7 +34,7 @@ CACHE_TTL_STOCK_DATA = 3600
 
 # Get the absolute path to the public directory
 # This makes sure StaticFiles always points to the correct location regardless of execution context
-BASE_DIR = Path(_file_).resolve().parent.parent # Points to the 'Stocker' root directory
+BASE_DIR = Path(__file__).resolve().parent.parent # Points to the 'Stocker' root directory
 PUBLIC_DIR = BASE_DIR / "public"
 
 # --- Reconfigure StaticFiles to be even more robust ---
