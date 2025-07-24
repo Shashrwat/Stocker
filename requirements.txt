@@ -2,11 +2,10 @@ fastapi>=0.111.0
 uvicorn>=0.30.0
 yfinance>=0.2.18
 pandas>=1.5.0
-requests==2.31.0 # Pinned version
+requests==2.31.0
 numpy>=1.23.0
 scipy>=1.10.0
 python-dotenv
 gunicorn>=21.0.0
 aiofiles>=23.0.0
-python-magic
-certifi>=2023.7.22 # NEW
+certifi>=2023.7.22

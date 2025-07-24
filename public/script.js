@@ -4,7 +4,8 @@
 const API_BASE_URL = window.location.origin;
 
 // DOM Elements
-const stockSelect = document.getElementById('stock-select');
+const stockSearchInput = document.getElementById('stock-search-input');
+const stockSuggestionsDatalist = document.getElementById('stock-suggestions');
 const periodSelect = document.getElementById('period-select');
 const chartSelect = document.getElementById('chart-select');
 const indicatorSelect = document.getElementById('indicator-select');
@@ -21,7 +22,10 @@ const aiInsightsSection = document.getElementById('ai-insights-section');
 const newsSection = document.getElementById('news-section');
 const newsList = document.getElementById('news-list');
 
-// --- EXTENSIVE LOGGING ADDED HERE ---
+// Global debounce timer for search input
+let searchTimeout = null;
+const SEARCH_DEBOUNCE_TIME = 300; // milliseconds
+
 console.log("script.js: Starting script execution.");
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -32,39 +36,77 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadParticles().catch(e => console.error("script.js: Error in loadParticles:", e));
     console.log("script.js: loadParticles() finished.");
 
-    // Initial load of symbols and data
-    console.log("script.js: Calling loadSymbols()...");
-    loadSymbols().then(() => {
-        console.log("script.js: loadSymbols() finished successfully. Calling loadStockDataAndCharts()...");
-        return loadStockDataAndCharts();
-    }).then(() => {
-        console.log("script.js: loadStockDataAndCharts() finished. Calling loadAISentiment()...");
-        return loadAISentiment();
-    }).then(() => {
-        console.log("script.js: loadAISentiment() finished. Calling loadNews()...");
-        return loadNews();
-    }).catch(error => {
-        console.error("script.js: Initialization chain failed:", error);
-        showMessage("Failed to load initial data. Please try again.", "error");
-    });
-    
     console.log("script.js: Setting up event listeners.");
-    // Add event listeners for changes in select boxes
-    stockSelect.addEventListener('change', async () => {
-        console.log("script.js: Stock selection changed. Calling loadStockDataAndCharts()...");
-        await loadStockDataAndCharts();
-        console.log("script.js: Stock selection changed. Calling loadNews()...");
-        await loadNews(); // Reload news when stock changes
+    
+    // Event listener for stock search input (for recommendations)
+    stockSearchInput.addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            const query = stockSearchInput.value.trim();
+            if (query.length > 0) {
+                searchAndSuggestSymbols(query);
+            } else {
+                stockSuggestionsDatalist.innerHTML = ''; // Clear suggestions if input is empty
+            }
+        }, SEARCH_DEBOUNCE_TIME);
     });
-    periodSelect.addEventListener('change', () => { console.log("script.js: Period changed. Calling loadStockDataAndCharts()..."); loadStockDataAndCharts(); });
-    chartSelect.addEventListener('change', () => { console.log("script.js: Chart style changed. Calling loadStockDataAndCharts()..."); loadStockDataAndCharts(); });
-    indicatorSelect.addEventListener('change', () => { console.log("script.js: Indicator changed. Calling loadStockDataAndCharts()..."); loadStockDataAndCharts(); });
 
+    // Event listener for when a suggestion is selected OR user types and presses Enter
+    stockSearchInput.addEventListener('change', async () => {
+        const selectedSymbol = stockSearchInput.value.trim();
+        if (selectedSymbol) {
+            console.log(`script.js: Stock input changed to ${selectedSymbol}. Calling loadStockDataAndCharts()...`);
+            await loadStockDataAndCharts(selectedSymbol);
+            console.log("script.js: Stock selection changed. Calling loadNews()...");
+            await loadNews(selectedSymbol); // Reload news when stock changes
+        }
+    });
+
+    periodSelect.addEventListener('change', () => {
+        const symbol = stockSearchInput.value.trim();
+        if (symbol) {
+            console.log("script.js: Period changed. Calling loadStockDataAndCharts()...");
+            loadStockDataAndCharts(symbol);
+        }
+    });
+    chartSelect.addEventListener('change', () => {
+        const symbol = stockSearchInput.value.trim();
+        if (symbol) {
+            console.log("script.js: Chart style changed. Calling loadStockDataAndCharts()...");
+            loadStockDataAndCharts(symbol);
+        }
+    });
+    indicatorSelect.addEventListener('change', () => {
+        const symbol = stockSearchInput.value.trim();
+        if (symbol) {
+            console.log("script.js: Indicator changed. Calling loadStockDataAndCharts()...");
+            loadStockDataAndCharts(symbol);
+        }
+    });
+
+    // Initial load of data for a default stock (e.g., RELIANCE or the first one if not available)
+    // We'll try to pre-fill the search input and load data.
+    // This requires a initial call to load symbols to set a default.
+    try {
+        await searchAndSuggestSymbols(""); // Load all symbols initially to pick a default
+        const defaultSymbol = stockSuggestionsDatalist.querySelector('option')?.value || "RELIANCE";
+        if (defaultSymbol) {
+            stockSearchInput.value = defaultSymbol; // Set the default in the input
+            await loadStockDataAndCharts(defaultSymbol);
+            await loadAISentiment();
+            await loadNews(defaultSymbol);
+        }
+    } catch (error) {
+        console.error("script.js: Initialization chain failed:", error);
+        showMessage("Failed to load initial data. Please try again or search for a stock.", "error");
+    }
+    
     console.log("script.js: DOMContentLoaded block finished.");
 });
 
+
 /**
- * Initializes the tsParticles background animation.
+ * Initializes the tsParticles background animation with a more intricate configuration.
  */
 async function loadParticles() {
     console.log("loadParticles(): Function started.");
@@ -73,11 +115,9 @@ async function loadParticles() {
             id: "tsparticles",
             options: {
                 background: {
-                    color: {
-                        value: "transparent", // Background handled by CSS gradient
-                    },
+                    color: { value: "transparent" },
                 },
-                fpsLimit: 60,
+                fpsLimit: 120, // Higher FPS for smoother animation
                 interactivity: {
                     events: {
                         onClick: {
@@ -86,7 +126,12 @@ async function loadParticles() {
                         },
                         onHover: {
                             enable: true,
-                            mode: "repulse",
+                            mode: "attract", // Changed to attract for a pull effect
+                            parallax: {
+                                enable: true,
+                                force: 60,
+                                smooth: 10,
+                            },
                         },
                         resize: true,
                     },
@@ -94,22 +139,40 @@ async function loadParticles() {
                         push: {
                             quantity: 4,
                         },
-                        repulse: {
-                            distance: 100,
-                            duration: 0.4,
+                        attract: {
+                            distance: 200,
+                            duration: 0.8,
+                            easing: "ease-out-quad", // Smoother easing
+                            factor: 1,
+                            maxSpeed: 50,
+                            speed: 1
+                        },
+                        repulse: { // Keep repulse as an alternative or for another mode
+                            distance: 150,
+                            duration: 0.5,
                         },
                     },
                 },
                 particles: {
                     color: {
-                        value: ["#00f2fe", "#4facfe", "#ff6b6b"], // Cosmic colors
+                        // More subtle and varied cosmic colors
+                        value: ["#00f2fe", "#4facfe", "#ff6b6b", "#e0e0e0", "#8a2be2"],
                     },
                     links: {
-                        color: "#ffffff",
+                        color: {
+                            value: "#ffffff", // White links
+                        },
                         distance: 150,
                         enable: true,
-                        opacity: 0.3,
-                        width: 1,
+                        opacity: 0.4, // Slightly more opaque links
+                        width: 1.5, // Thicker links
+                        triangles: { // Add triangles between connected particles for more visual interest
+                            enable: true,
+                            color: {
+                                value: "#ffffff"
+                            },
+                            opacity: 0.05
+                        }
                     },
                     move: {
                         direction: "none",
@@ -117,28 +180,59 @@ async function loadParticles() {
                         outModes: {
                             default: "bounce",
                         },
-                        random: false,
-                        speed: 1,
+                        random: true, // Random movement for more organic feel
+                        speed: 1, // Slower speed
                         straight: false,
+                        attract: {
+                            enable: true,
+                            rotateX: 600,
+                            rotateY: 1200
+                        },
                     },
                     number: {
                         density: {
                             enable: true,
                             area: 800,
                         },
-                        value: 80,
+                        value: 120, // More particles
                     },
                     opacity: {
-                        value: 0.5,
+                        value: { min: 0.3, max: 0.7 }, // Varied opacity
+                        animation: {
+                            enable: true,
+                            speed: 0.5,
+                            sync: false,
+                            startValue: "random",
+                            destroy: "none"
+                        }
                     },
                     shape: {
-                        type: "circle",
+                        type: ["circle", "star"], // Add stars
+                        options: {
+                            star: {
+                                sides: 5 // Default star sides
+                            }
+                        }
                     },
                     size: {
-                        value: { min: 1, max: 5 },
+                        value: { min: 1, max: 4 }, // Smaller, varied sizes
+                        animation: {
+                            enable: true,
+                            speed: 2,
+                            sync: false,
+                            startValue: "random",
+                            destroy: "none"
+                        }
+                    },
+                    collisions: { // Enable collisions for bouncing effect
+                        enable: true,
                     },
                 },
                 detectRetina: true,
+                fullScreen: { // Ensure it covers the whole screen
+                    enable: true,
+                    zIndex: -1
+                }
             },
         });
         console.log("loadParticles(): tsParticles.load completed.");
@@ -155,7 +249,6 @@ async function loadParticles() {
  * @param {string} type - 'success' or 'error'.
  */
 function showMessage(message, type) {
-    // console.log(`showMessage(): Displaying ${type} message: ${message}`);
     messageBox.textContent = message;
     messageBox.className = `message-box ${type} show`;
     setTimeout(() => {
@@ -168,88 +261,61 @@ function showMessage(message, type) {
  * @param {boolean} show - True to show, false to hide.
  */
 function toggleLoading(show) {
-    // console.log(`toggleLoading(): ${show ? 'Showing' : 'Hiding'} spinner.`);
     loadingIndicator.style.display = show ? 'flex' : 'none';
 }
 
 /**
- * Fetches stock symbols from the backend API and populates the stock select dropdown.
+ * Fetches stock symbols based on a query and populates the datalist for recommendations.
+ * @param {string} query - The search query for symbols.
  */
-async function loadSymbols() {
-    console.log("loadSymbols(): Function started.");
-    toggleLoading(true);
+async function searchAndSuggestSymbols(query) {
+    console.log(`searchAndSuggestSymbols(): Searching for "${query}"`);
     try {
-        console.log(`loadSymbols(): Fetching from ${API_BASE_URL}/api/symbols`);
-        const response = await fetch(`${API_BASE_URL}/api/symbols`);
-        let data;
-        try {
-            data = await response.json();
-        } catch (jsonErr) {
-            data = { detail: "Invalid JSON from API" };
-        }
-        console.log("loadSymbols(): API data received:", data);
-
+        const url = `${API_BASE_URL}/api/search-symbols?query=${encodeURIComponent(query)}`;
+        const response = await fetch(url);
         if (!response.ok) {
-            console.error("loadSymbols(): API response not OK.", data);
-            throw new Error(data.detail || `Failed to fetch symbols: HTTP status ${response.status}`);
+            const errorData = await response.json().catch(() => ({ detail: "Unknown API error during symbol search" }));
+            throw new Error(errorData.detail || `Failed to fetch symbol suggestions: HTTP status ${response.status}`);
         }
+        const data = await response.json();
+        console.log("searchAndSuggestSymbols(): API data received:", data);
 
-        stockSelect.innerHTML = '';
-        const loadingOption = document.createElement('option');
-        loadingOption.value = "";
-        loadingOption.textContent = "Loading symbols...";
-        loadingOption.disabled = true;
-        loadingOption.selected = true;
-        stockSelect.appendChild(loadingOption);
-
+        stockSuggestionsDatalist.innerHTML = '';
         if (data.symbols && Array.isArray(data.symbols) && data.symbols.length > 0) {
-            stockSelect.innerHTML = '';
-            
-data.symbols.slice(0, 100).forEach(symbol => {
-    const option = document.createElement('option');
-    option.value = symbol;
-    option.textContent = `📈 ${symbol}`;
-    stockSelect.appendChild(option);
-});
-// ...existing code...
-            if (data.symbols.includes("RELIANCE")) {
-                stockSelect.value = "RELIANCE";
-            } else {
-                stockSelect.value = data.symbols[0];
+            data.symbols.forEach(symbol => {
+                const option = document.createElement('option');
+                option.value = symbol;
+                stockSuggestionsDatalist.appendChild(option);
+            });
+            // Auto-select the first suggestion if the input exactly matches one
+            if (data.symbols.includes(query.toUpperCase())) {
+                stockSearchInput.value = query.toUpperCase();
             }
-            showMessage("Stock symbols loaded successfully!", "success");
         } else {
-            stockSelect.innerHTML = '';
-            const noDataOption = document.createElement('option');
-            noDataOption.value = "";
-            noDataOption.textContent = "No symbols found.";
-            noDataOption.disabled = true;
-            noDataOption.selected = true;
-            stockSelect.appendChild(noDataOption);
-            showMessage("No stock symbols found. The API might be empty or unavailable.", "error");
+            // Optionally, clear the input or show a "no suggestions" message if desired
+            // stockSuggestionsDatalist.innerHTML = '<option value="No suggestions found."></option>';
         }
     } catch (error) {
-        console.error("loadSymbols(): Critical error:", error);
-        showMessage(`Error loading symbols: ${error.message}. Check browser console.`, "error");
-        stockSelect.innerHTML = '<option value="" disabled selected>Error loading symbols</option>';
-    } finally {
-        toggleLoading(false);
-        console.log("loadSymbols(): Function finished.");
+        console.error("searchAndSuggestSymbols(): Error:", error);
+        showMessage(`Error searching symbols: ${error.message}`, "error");
+        stockSuggestionsDatalist.innerHTML = '';
     }
 }
 
+
 /**
- * Fetches stock data from the backend API and renders all charts and metrics.
+ * Fetches historical stock data and renders all charts and metrics.
+ * @param {string} symbol - The stock symbol to fetch data for.
  */
-async function loadStockDataAndCharts() {
+async function loadStockDataAndCharts(symbol) {
     console.log("loadStockDataAndCharts(): Function started.");
-    const symbol = stockSelect.value;
     const period = periodSelect.value;
     const chartType = chartSelect.value;
     const indicator = indicatorSelect.value;
 
     if (!symbol) {
         console.log("loadStockDataAndCharts(): No symbol selected, skipping data load.");
+        showMessage("Please select or search for a stock symbol.", "error");
         return;
     }
 
@@ -294,7 +360,7 @@ async function loadStockDataAndCharts() {
         console.log("loadStockDataAndCharts(): Rendering charts and metrics...");
         renderMainChart(hist, symbol, chartType, indicator);
         renderVolumeBars(hist);
-        renderAnalyticsPie(); // Static data
+        renderAnalyticsPie(); // Static data, can be made dynamic if data is available
         renderReturnsWave(hist);
         updateInfoMetrics(hist, info);
         showMessage("Stock data loaded successfully!", "success");
@@ -323,11 +389,10 @@ async function loadStockDataAndCharts() {
  * @returns {Array<number|null>} Array of SMA values, with nulls for initial period.
  */
 function calculateSMA(data, windowSize) {
-    // console.log("calculateSMA(): Calculating SMA...");
     const sma = [];
     for (let i = 0; i < data.length; i++) {
         if (i < windowSize - 1) {
-            sma.push(null); // Not enough data for the initial window
+            sma.push(null);
         } else {
             const sum = data.slice(i - windowSize + 1, i + 1).reduce((a, b) => a + b, 0);
             sma.push(sum / windowSize);
@@ -344,7 +409,6 @@ function calculateSMA(data, windowSize) {
  * @param {string} indicator - Indicator to add (e.g., 'SMA50', 'SMA200').
  */
 function renderMainChart(hist, symbol, chartType, indicator) {
-    // console.log("renderMainChart(): Rendering main chart...");
     let traces = [];
     
     // Main price trace
@@ -402,8 +466,8 @@ function renderMainChart(hist, symbol, chartType, indicator) {
 
     const layout = {
         title: {
-            text: `<b>${symbol} ${chartType.toUpperCase()} ANALYSIS</b>`,
-            font: { size: 24, color: 'var(--color-primary)' }
+            text: `<b>${symbol} Price Chart</b>`,
+            font: { size: 24, color: 'var(--color-primary)', family: 'Orbitron, sans-serif' }
         },
         height: 500,
         xaxis: { 
@@ -411,16 +475,18 @@ function renderMainChart(hist, symbol, chartType, indicator) {
             showgrid: false, 
             zeroline: false,
             tickfont: { color: 'white' },
-            type: 'date'
+            type: 'date',
+            title: { text: 'Date', font: { color: 'white' } }
         },
         yaxis: { 
             showgrid: false, 
             zeroline: false,
-            tickfont: { color: 'white' }
+            tickfont: { color: 'white' },
+            title: { text: 'Price', font: { color: 'white' } }
         },
         plot_bgcolor: 'rgba(0,0,0,0)',
         paper_bgcolor: 'rgba(0,0,0,0.3)',
-        font: { color: 'white' },
+        font: { color: 'white', family: 'Roboto, sans-serif' },
         margin: { t: 60, b: 60, l: 60, r: 60 },
         hovermode: 'x unified',
         legend: {
@@ -439,28 +505,31 @@ function renderMainChart(hist, symbol, chartType, indicator) {
  * @param {Array<Object>} hist - Historical data.
  */
 function renderVolumeBars(hist) {
-    // console.log("renderVolumeBars(): Rendering volume chart...");
     const trace = {
         x: hist.map(d => d.date),
         y: hist.map(d => d.Volume),
         type: 'bar',
         marker: {
-            color: hist.map(d => d.Volume), 
-            colorscale: 'Tealgrn', 
+            color: hist.map(d => {
+                const close = d.Close;
+                const open = d.Open;
+                // Color based on price change: green for increase, red for decrease
+                return close >= open ? 'rgba(0, 242, 254, 0.7)' : 'rgba(255, 107, 107, 0.7)';
+            }), 
             line: { width: 0 }
         }
     };
     const layout = {
         title: {
-            text: '<b>VOLUME ANALYSIS</b>',
-            font: { size: 20, color: 'var(--color-primary)' }
+            text: '<b>Daily Volume</b>',
+            font: { size: 20, color: 'var(--color-primary)', family: 'Orbitron, sans-serif' }
         },
         height: 300,
-        xaxis: { showgrid: false, zeroline: false, tickfont: { color: 'white' }, type: 'date' },
-        yaxis: { showgrid: false, zeroline: false, tickfont: { color: 'white' } },
+        xaxis: { showgrid: false, zeroline: false, tickfont: { color: 'white' }, type: 'date', title: { text: 'Date', font: { color: 'white' } } },
+        yaxis: { showgrid: false, zeroline: false, tickfont: { color: 'white' }, title: { text: 'Volume', font: { color: 'white' } } },
         plot_bgcolor: 'rgba(0,0,0,0)',
         paper_bgcolor: 'rgba(0,0,0,0.3)',
-        font: { color: 'white' },
+        font: { color: 'white', family: 'Roboto, sans-serif' },
         margin: { t: 60, b: 60, l: 60, r: 60 }
     };
     Plotly.newPlot(volumeChartDiv, [trace], layout);
@@ -470,28 +539,33 @@ function renderVolumeBars(hist) {
  * Renders the ownership structure pie chart (static data).
  */
 function renderAnalyticsPie() {
-    // console.log("renderAnalyticsPie(): Rendering ownership chart...");
     const trace = {
-        labels: ['Institutional', 'Retail', 'Insider'],
-        values: [45, 35, 20],
+        labels: ['Institutional Investors', 'Retail Investors', 'Company Insiders', 'Mutual Funds'],
+        values: [40, 30, 15, 15], // Adjusted values for more variety
         hole: 0.5,
         type: 'pie',
         marker: {
-            colors: ['var(--color-primary)', 'var(--color-secondary)', 'var(--color-accent)'],
+            colors: ['var(--color-primary)', 'var(--color-secondary)', 'var(--color-accent)', '#8a2be2'], // Added another color
             line: { color: 'white', width: 2 }
         },
         textinfo: 'percent+label',
-        hoverinfo: 'label+percent+value'
+        hoverinfo: 'label+percent+value',
+        textfont: {
+            color: 'white' // Text on pie slices
+        }
     };
     const layout = {
         title: {
-            text: '<b>OWNERSHIP STRUCTURE</b>',
-            font: { size: 20, color: 'var(--color-primary)' }
+            text: '<b>Ownership Structure</b>',
+            font: { size: 20, color: 'var(--color-primary)', family: 'Orbitron, sans-serif' }
         },
         plot_bgcolor: 'rgba(0,0,0,0)',
         paper_bgcolor: 'rgba(0,0,0,0.3)',
-        font: { color: 'white' },
-        margin: { t: 60, b: 60, l: 60, r: 60 }
+        font: { color: 'white', family: 'Roboto, sans-serif' },
+        margin: { t: 60, b: 60, l: 60, r: 60 },
+        legend: {
+            font: { color: 'white' }
+        }
     };
     Plotly.newPlot(ownershipChartDiv, [trace], layout);
 }
@@ -501,7 +575,6 @@ function renderAnalyticsPie() {
  * @param {Array<Object>} hist - Historical data.
  */
 function renderReturnsWave(hist) {
-    // console.log("renderReturnsWave(): Rendering returns chart...");
     const closePrices = hist.map(d => d.Close);
     if (closePrices.length < 2) {
         Plotly.purge(returnsChartDiv);
@@ -516,20 +589,20 @@ function renderReturnsWave(hist) {
         x: returns,
         type: 'histogram',
         histnorm: 'probability density',
-        marker: { color: 'rgba(79,172,254,0.6)' },
+        marker: { color: 'rgba(79,172,254,0.6)', line: { color: 'rgba(79,172,254,0.9)', width: 1 } },
         name: 'Returns Histogram'
     };
 
     const layout = {
         title: {
-            text: '<b>RETURNS DISTRIBUTION</b>',
-            font: { size: 20, color: 'var(--color-primary)' }
+            text: '<b>Daily Returns Distribution</b>',
+            font: { size: 20, color: 'var(--color-primary)', family: 'Orbitron, sans-serif' }
         },
         xaxis: { title: 'Daily Returns', showgrid: false, zeroline: false, tickfont: { color: 'white' } },
         yaxis: { title: 'Density', showgrid: false, zeroline: false, tickfont: { color: 'white' } },
         plot_bgcolor: 'rgba(0,0,0,0)',
         paper_bgcolor: 'rgba(0,0,0,0.3)',
-        font: { color: 'white' },
+        font: { color: 'white', family: 'Roboto, sans-serif' },
         showlegend: false,
         margin: { t: 60, b: 60, l: 60, r: 60 }
     };
@@ -542,11 +615,23 @@ function renderReturnsWave(hist) {
  * @param {Object} info - Company information.
  */
 function updateInfoMetrics(hist, info) {
-    // console.log("updateInfoMetrics(): Updating metrics...");
     // Top Metrics
     metricsContainer.innerHTML = ''; // Clear previous
+    const lastClosePrice = hist[hist.length - 1].Close;
+    const previousClosePrice = hist[hist.length - 2]?.Close; // Get previous day's close for change calculation
+    
+    let priceChange = 'N/A';
+    let changeClass = '';
+    if (lastClosePrice && previousClosePrice) {
+        const change = lastClosePrice - previousClosePrice;
+        const percentChange = (change / previousClosePrice) * 100;
+        priceChange = `${change.toFixed(2)} (${percentChange.toFixed(2)}%)`;
+        changeClass = change >= 0 ? 'positive-change' : 'negative-change';
+    }
+
     const topMetrics = {
-        'Current Price': hist[hist.length - 1].Close,
+        'Current Price': lastClosePrice,
+        'Daily Change': priceChange, // New metric
         '52W High': info.fiftyTwoWeekHigh,
         'P/E Ratio': info.trailingPE,
         'Market Cap': info.marketCap
@@ -555,8 +640,13 @@ function updateInfoMetrics(hist, info) {
     for (const metric in topMetrics) {
         const value = topMetrics[metric];
         let displayValue = 'N/A';
+        let customClass = '';
+
         if (value !== undefined && value !== null) {
-            if (typeof value === 'number') {
+            if (metric === 'Daily Change') {
+                displayValue = value;
+                customClass = changeClass; // Apply change color class
+            } else if (typeof value === 'number') {
                 if (metric === 'Market Cap') {
                     displayValue = `₹${value.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
                 } else if (metric === 'P/E Ratio') {
@@ -571,14 +661,14 @@ function updateInfoMetrics(hist, info) {
         metricsContainer.innerHTML += `
             <div class='metric-glow'>
                 <h3 style='color: var(--color-secondary); margin:0'>${metric}</h3>
-                <h2 style='color: var(--color-primary); margin:0'>${displayValue}</h2>
+                <h2 class='${customClass}' style='color: var(--color-primary); margin:0'>${displayValue}</h2>
             </div>
         `;
     }
 
     // Company Overview Section
     if (info.longBusinessSummary) {
-        document.getElementById('overview-symbol').textContent = stockSelect.value;
+        document.getElementById('overview-symbol').textContent = stockSearchInput.value;
         document.getElementById('business-summary').textContent = info.longBusinessSummary;
         document.getElementById('industry').textContent = info.industry || 'N/A';
         document.getElementById('sector').textContent = info.sector || 'N/A';
@@ -603,7 +693,10 @@ function updateInfoMetrics(hist, info) {
     const secondaryMetrics = {
         'Dividend Yield': info.dividendYield,
         'Beta': info.beta,
-        'EPS': info.trailingEps
+        'EPS (Trailing)': info.trailingEps,
+        'Book Value': info.bookValue, // New metric
+        '52W Low': info.fiftyTwoWeekLow, // New metric
+        'Average Volume (10d)': info.averageDailyVolume10Day // New metric
     };
 
     for (const metric in secondaryMetrics) {
@@ -613,6 +706,8 @@ function updateInfoMetrics(hist, info) {
             if (typeof value === 'number') {
                 if (metric.includes('Yield')) {
                     displayValue = `${(value * 100).toFixed(2)}%`;
+                } else if (metric.includes('Volume')) {
+                    displayValue = value.toLocaleString();
                 } else {
                     displayValue = value.toFixed(2);
                 }
@@ -645,11 +740,11 @@ async function loadAISentiment() {
         const data = await response.json();
         console.log("loadAISentiment(): API data received:", data);
 
-        const forecastColorClass = data.forecast >= 0 ? 'positive' : 'negative';
+        const forecastColorClass = data.forecast >= 0 ? 'positive-change' : 'negative-change';
         const forecastIcon = data.forecast >= 0 ? '<i class="fas fa-arrow-up"></i>' : '<i class="fas fa-arrow-down"></i>';
 
         aiInsightsSection.innerHTML = `
-            <h2 style='color: var(--color-primary); text-align: center;'>AI MARKET INSIGHTS 🔮</h2>
+            <h2 style='color: var(--color-primary); text-align: center;'>AI Market Insights 🔮</h2>
             <div class='ai-metrics-row'>
                 <div class='ai-metric-item'>
                     <h3 style='color: var(--color-secondary);'>7-Day Forecast</h3>
@@ -659,8 +754,14 @@ async function loadAISentiment() {
                 </div>
                 <div class='ai-metric-item'>
                     <h3 style='color: var(--color-secondary);'>Market Sentiment</h3>
-                    <div class='ai-metric-value positive'>${data.bullish}% <i class="fas fa-smile"></i></div>
-                    <div class='ai-metric-value neutral'>Bearish ${data.bearish}% <i class="fas fa-frown"></i></div>
+                    <div class='ai-sentiment-bar'>
+                        <div class='sentiment-fill bullish' style='width: ${data.bullish}%;'></div>
+                        <div class='sentiment-fill bearish' style='width: ${data.bearish}%;'></div>
+                    </div>
+                    <div class='sentiment-labels'>
+                        <span class='positive-change'>Bullish ${data.bullish}% <i class="fas fa-chart-line"></i></span>
+                        <span class='negative-change'>Bearish ${data.bearish}% <i class="fas fa-chart-line-down"></i></span>
+                    </div>
                 </div>
             </div>
             <div class='disclaimer'>
@@ -678,10 +779,10 @@ async function loadAISentiment() {
 
 /**
  * Simulates fetching news articles for the selected stock.
+ * @param {string} symbol - The stock symbol for which to fetch news.
  */
-async function loadNews() {
+async function loadNews(symbol) {
     console.log("loadNews(): Function started.");
-    const symbol = stockSelect.value;
     if (!symbol) {
         console.log("loadNews(): No symbol selected, hiding news section.");
         newsSection.style.display = 'none';
@@ -690,42 +791,37 @@ async function loadNews() {
 
     newsSection.style.display = 'block';
     document.getElementById('news-symbol').textContent = `for ${symbol}`;
-    newsList.innerHTML = '<p style="text-align: center; color: #ccc;">Fetching latest news...</p>';
+    newsList.innerHTML = '<p style="text-align: center; color: #ccc;">Fetching latest news from the void...</p>';
 
     // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 1500)); // Slightly longer delay
 
-    // Simulated news data (replace with actual API call in a real app)
-    const simulatedNews = [
-        {
-            title: `Stocker analysts bullish on ${symbol}'s Q3 earnings.`,
-            summary: `Experts predict strong growth driven by market demand.`,
-            url: `https://example.com/news/${symbol}-q3-earnings`,
-            source: 'Stocker Daily',
-            date: '2024-07-23'
-        },
-        {
-            title: `${symbol} announces new strategic partnership.`,
-            summary: `Collaboration expected to open new revenue streams.`,
-            url: `https://example.com/news/${symbol}-partnership`,
-            source: 'Global Finance News',
-            date: '2024-07-22'
-        },
-        {
-            title: `Market volatility impacts ${symbol} stock performance.`,
-            summary: `Analysts advise caution amid broader economic concerns.`,
-            url: `https://example.com/news/${symbol}-volatility`,
-            source: 'Market Watch',
-            date: '2024-07-21'
-        },
-        {
-            title: `Innovation at ${symbol}: A deep dive into their R&D.`,
-            summary: `Company's commitment to innovation could drive long-term value.`,
-            url: `https://example.com/news/${symbol}-innovation`,
-            source: 'Tech Investor',
-            date: '2024-07-20'
+    // More dynamic simulated news data
+    const newsKeywords = ["earnings", "partnership", "innovation", "market outlook", "investment", "growth", "challenge", "expansion"];
+    const sentiments = ["bullish", "positive", "neutral", "bearish", "caution"];
+    const sources = ["Stocker Herald", "Galaxy Finance", "Quantum Investor", "Cosmic Market News"];
+
+    const generateRandomNews = (sym) => {
+        const numArticles = Math.floor(Math.random() * 3) + 3; // 3 to 5 articles
+        const articles = [];
+        for (let i = 0; i < numArticles; i++) {
+            const keyword = newsKeywords[Math.floor(Math.random() * newsKeywords.length)];
+            const sentiment = sentiments[Math.floor(Math.random() * sentiments.length)];
+            const source = sources[Math.floor(Math.random() * sources.length)];
+            const date = new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000).toISOString().slice(0, 10); // Last 30 days
+
+            articles.push({
+                title: `${sym} ${keyword} analysis: ${sentiment} outlook.`,
+                summary: `Latest reports indicate significant developments in ${sym}'s ${keyword} sector, leading to a ${sentiment} market sentiment.`,
+                url: `https://example.com/news/${sym}-${keyword}-${i}`,
+                source: source,
+                date: date
+            });
         }
-    ];
+        return articles;
+    };
+
+    const simulatedNews = generateRandomNews(symbol);
 
     newsList.innerHTML = ''; // Clear loading message
 
@@ -735,18 +831,23 @@ async function loadNews() {
             const articleDiv = document.createElement('div');
             articleDiv.className = 'news-article';
             articleDiv.innerHTML = `
-                <h3><a href="${article.url}" target="_blank">${article.title}</a></h3>
+                <h3><a href="${article.url}" target="_blank"><i class="fas fa-newspaper"></i> ${article.title}</a></h3>
                 <p>${article.summary}</p>
-                <div class="source-date">${article.source} - ${article.date}</div>
+                <div class="source-date">Source: ${article.source} <span class="bullet-separator"></span> Date: ${article.date}</div>
             `;
             newsList.appendChild(articleDiv);
         });
     } else {
         console.warn("loadNews(): No simulated news articles found.");
-        newsList.innerHTML = '<p style="text-align: center; color: #ccc;">No recent news found for this stock.</p>';
+        newsList.innerHTML = '<p style="text-align: center; color: #ccc;">No recent cosmic news found for this stock. The void is silent.</p>';
     }
     console.log("loadNews(): Function finished.");
 }
-window.addEventListener('DOMContentLoaded', () => {
-    loadSymbols();
+
+// Initial symbol search and data load (on page load)
+// This will trigger the initial data fetch for a default stock
+document.addEventListener('DOMContentLoaded', () => {
+    // No direct call to loadSymbols anymore.
+    // The initial load in DOMContentLoaded will call searchAndSuggestSymbols
+    // to populate the datalist, and then load the default stock.
 });

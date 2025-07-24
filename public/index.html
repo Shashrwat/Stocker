@@ -3,39 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stocker: Cosmic Stock Analytics</title>
+    <title>Stocker: Nebula Nexus Analytics</title>
     
-    <!-- Your local CSS file - CORRECTED PATH -->
     <link rel="stylesheet" href="/style.css">
     
-    <!-- Plotly.js for charting (CDN - external, no path change) -->
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     
-    <!-- Font Awesome for icons (CDN - external, no path change) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
-    <!-- tsParticles library for background animation (CDNs - external, no path change) -->
     <script src="https://cdn.jsdelivr.net/npm/@tsparticles/engine@2/tsparticles.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tsparticles/slim@2/tsparticles.slim.min.js"></script>
 </head>
 <body>
-    <!-- Particle background container -->
     <div id="tsparticles"></div>
 
-    <!-- Main content wrapper -->
     <div class="main-content-wrapper">
         <div class="header-container">
-            <h1 class="header-text">STOCKER: COSMIC ANALYTICS</h1>
+            <h1 class="header-text">STOCKER: NEBULA NEXUS ANALYTICS</h1>
+            <p class="tagline">Explore the Universe of Financial Data</p>
             <div class="header-line"></div>
         </div>
 
         <div class="controls-container">
             <div class="input-group">
-                <label for="stock-select">Select Stock:</label>
-                <select id="stock-select" class="select-box"></select>
+                <label for="stock-search-input"><i class="fas fa-search"></i> Select or Search Stock:</label>
+                <input type="text" id="stock-search-input" class="text-input" list="stock-suggestions" placeholder="e.g., RELIANCE, TCS" autocomplete="off">
+                <datalist id="stock-suggestions"></datalist>
             </div>
             <div class="input-group">
-                <label for="period-select">Period:</label>
+                <label for="period-select"><i class="fas fa-calendar-alt"></i> Period:</label>
                 <select id="period-select" class="select-box">
                     <option value="1mo">1 Month</option>
                     <option value="3mo">3 Months</option>
@@ -46,7 +42,7 @@
                 </select>
             </div>
             <div class="input-group">
-                <label for="chart-select">Chart Style:</label>
+                <label for="chart-select"><i class="fas fa-chart-line"></i> Chart Style:</label>
                 <select id="chart-select" class="select-box">
                     <option value="Candlestick" selected>Candlestick</option>
                     <option value="Line">Line</option>
@@ -54,7 +50,7 @@
                 </select>
             </div>
             <div class="input-group">
-                <label for="indicator-select">Indicator:</label>
+                <label for="indicator-select"><i class="fas fa-chart-bar"></i> Indicator:</label>
                 <select id="indicator-select" class="select-box">
                     <option value="None">None</option>
                     <option value="SMA50">SMA (50-day)</option>
@@ -65,13 +61,12 @@
 
         <div id="loading-indicator" class="loading-spinner" style="display: none;">
             <div class="spinner"></div>
-            <p>Loading data...</p>
+            <p>Loading Cosmic Data...</p>
         </div>
         <div id="message-box" class="message-box" style="display: none;"></div>
 
         <div class="metrics-grid" id="metrics-container">
-            <!-- Top metrics will be injected here by JavaScript -->
-        </div>
+            </div>
 
         <div id="main-chart" class="plot-container"></div>
 
@@ -87,8 +82,7 @@
         </div>
 
         <div class="metrics-grid" id="secondary-metrics-container">
-            <!-- Secondary metrics will be injected here -->
-        </div>
+            </div>
 
         <div class="charts-row">
             <div id="volume-chart" class="plot-container"></div>
@@ -97,24 +91,21 @@
         </div>
 
         <div class="ai-pulse" id="ai-insights-section">
-            <!-- AI insights will be injected here by JavaScript -->
-        </div>
+            </div>
 
         <div class="news-section" id="news-section" style="display: none;">
-            <h2 style='color: var(--color-primary); text-align: center;'>LATEST NEWS 📰 <span id="news-symbol"></span></h2>
+            <h2 style='color: var(--color-primary); text-align: center;'>NEBULA NEWS FEED 📰 <span id="news-symbol"></span></h2>
             <div id="news-list" class="news-list">
-                <!-- News articles will be injected here -->
-            </div>
+                </div>
             <p class="disclaimer">Note: News articles are simulated for demonstration purposes.</p>
         </div>
 
         <footer class="footer">
-            <p>&copy; 2024 Stocker. All rights reserved. Data provided by Yahoo Finance & NSE India.</p>
+            <p>&copy; 2024 Stocker: Nebula Nexus. All rights reserved.</p>
             <p class="disclaimer">Disclaimer: This application is for informational purposes only and does not constitute financial advice. Always consult a professional financial advisor before making investment decisions.</p>
         </footer>
     </div>
 
-    <!-- Your main JavaScript file - CORRECTED PATH -->
     <script src="/script.js"></script>
 </body>
 </html>
