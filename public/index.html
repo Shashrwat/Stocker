@@ -4,7 +4,115 @@ index.html
 /* --- Global Styles & Cosmic Background --- */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap');
 
-:root {
+:root {<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stocker: Cosmic Stock Analytics</title>
+    
+    <link rel="stylesheet" href="/static/style.css">
+    
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@tsparticles/engine@2/tsparticles.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tsparticles/slim@2/tsparticles.slim.min.js"></script>
+</head>
+<body>
+    <div id="tsparticles"></div>
+
+    <div class="main-content-wrapper">
+        <div class="header-container">
+            <h1 class="header-text">STOCKER: COSMIC ANALYTICS</h1>
+            <div class="header-line"></div>
+        </div>
+
+        <div class="controls-container">
+            <div class="input-group">
+                <label for="stock-select">Select Stock:</label>
+                <select id="stock-select" class="select-box"></select>
+            </div>
+            <div class="input-group">
+                <label for="period-select">Period:</label>
+                <select id="period-select" class="select-box">
+                    <option value="1mo">1 Month</option>
+                    <option value="3mo">3 Months</option>
+                    <option value="6mo">6 Months</option>
+                    <option value="1y" selected>1 Year</option>
+                    <option value="5y">5 Years</option>
+                    <option value="max">Max</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label for="chart-select">Chart Style:</label>
+                <select id="chart-select" class="select-box">
+                    <option value="Candlestick" selected>Candlestick</option>
+                    <option value="Line">Line</option>
+                    <option value="Area">Area</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label for="indicator-select">Indicator:</label>
+                <select id="indicator-select" class="select-box">
+                    <option value="None">None</option>
+                    <option value="SMA50">SMA (50-day)</option>
+                    <option value="SMA200">SMA (200-day)</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="loading-indicator" class="loading-spinner" style="display: none;">
+            <div class="spinner"></div>
+            <p>Loading data...</p>
+        </div>
+        <div id="message-box" class="message-box" style="display: none;"></div>
+
+        <div class="metrics-grid" id="metrics-container">
+            </div>
+
+        <div id="main-chart" class="plot-container"></div>
+
+        <div id="overview-section" class="metric-glow company-overview" style="display: none;">
+            <h3 style='color: var(--color-primary); margin-top:0'><span id="overview-symbol"></span> Company Overview <i class="fas fa-info-circle"></i></h3>
+            <p id="business-summary" style='line-height: 1.6;'></p>
+            <div class="company-details">
+                <strong>Industry:</strong> <span id="industry">N/A</span><br>
+                <strong>Sector:</strong> <span id="sector">N/A</span><br>
+                <strong>Website:</strong> <a id="website" href="#" target="_blank" style="color: var(--color-secondary);">N/A</a><br>
+                <strong>Employees:</strong> <span id="employees">N/A</span>
+            </div>
+        </div>
+
+        <div class="metrics-grid" id="secondary-metrics-container">
+            </div>
+
+        <div class="charts-row">
+            <div id="volume-chart" class="plot-container"></div>
+            <div id="ownership-chart" class="plot-container"></div>
+            <div id="returns-chart" class="plot-container"></div>
+        </div>
+
+        <div class="ai-pulse" id="ai-insights-section">
+            </div>
+
+        <div class="news-section" id="news-section" style="display: none;">
+            <h2 style='color: var(--color-primary); text-align: center;'>LATEST NEWS 📰 <span id="news-symbol"></span></h2>
+            <div id="news-list" class="news-list">
+                </div>
+            <p class="disclaimer">Note: News articles are simulated for demonstration purposes.</p>
+        </div>
+
+        <footer class="footer">
+            <p>&copy; 2024 Stocker. All rights reserved. Data provided by Yahoo Finance & NSE India.</p>
+            <p class="disclaimer">Disclaimer: This application is for informational purposes only and does not constitute financial advice. Always consult a professional financial advisor before making investment decisions.</p>
+        </footer>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
     --color-primary: #00f2fe; /* Bright Cyan */
     --color-secondary: #4facfe; /* Light Blue */
     --color-accent: #ff6b6b; /* Reddish Pink */
