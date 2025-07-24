@@ -1,6 +1,10 @@
 # Stocker/api/index.py
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles # NEW
+from starlette.responses import FileResponse # NEW
+from pathlib import Path # NEW
+
 import yfinance as yf
 import pandas as pd
 import requests
@@ -28,10 +32,17 @@ _stock_data_cache = {} # key: (symbol, period) -> {"history": DataFrame, "info":
 CACHE_TTL_SYMBOLS = 24 * 3600 # 24 hours in seconds
 CACHE_TTL_STOCK_DATA = 3600 # 1 hour in seconds
 
+
+# NEW: Mount the 'public' directory to serve static files
+# Make sure the 'public' directory is copied to the root of your deployed app
+app.mount("/static", StaticFiles(directory="public"), name="static")
+
+# NEW: Serve the main index.html file at the root URL
 @app.get("/")
-async def root():
-    """Root endpoint for the API."""
-    return {"message": "Stocker API is running! Access /api/symbols or /api/stock/{symbol}"}
+async def serve_index():
+    return FileResponse(Path("public/index.html"))
+
+# Existing API routes from previous versions
 
 @app.get("/api/symbols")
 async def get_symbols_api():
@@ -104,7 +115,7 @@ async def get_sentiment_api():
         "forecast": forecast
     }
 
-# This part is for local development with Uvicorn, Vercel handles this automatically
-if __name__ == "__main__":
+# This part is for local development with Uvicorn
+if __name__ == "__main_":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
