@@ -2,7 +2,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from starlette.responses import FileResponse # Used for serving index.html directly
+from starlette.responses import FileResponse
 from pathlib import Path
 
 import yfinance as yf
@@ -20,7 +20,7 @@ app = FastAPI()
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[""], # WARNING: In production, change "" to your specific frontend URL(s)
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -28,20 +28,16 @@ app.add_middleware(
 
 # Simple in-memory cache for demonstration.
 _nse_symbols_cache = {"symbols": [], "timestamp": None}
-_stock_data_cache = {} # key: (symbol, period) -> {"history": DataFrame, "info": Dict, "timestamp": datetime}
-CACHE_TTL_SYMBOLS = 24 * 3600 # 24 hours in seconds
-CACHE_TTL_STOCK_DATA = 3600 # 1 hour in seconds
+_stock_data_cache = {}
+CACHE_TTL_SYMBOLS = 24 * 3600
+CACHE_TTL_STOCK_DATA = 3600
 
-# --- IMPORTANT: Mount StaticFiles FIRST, before any other routes if possible ---
-# This ensures that requests for /static/... are handled by the static file server
-# before potentially being caught by other API routes.
-# The directory is 'public' relative to the root of your deployed application.
+# --- IMPORTANT: Mount StaticFiles FIRST and explicitly for the 'public' directory ---
+# This serves files like /static/style.css, /static/script.js, /static/images/etc.
 app.mount("/static", StaticFiles(directory="public"), name="static")
 
 # --- API Endpoints ---
-# These should generally come AFTER static file mounts to avoid conflicts if paths overlap
-# (though /api is distinct from /static, order is still good practice).
-
+# These routes must come before the catch-all route for index.html
 @app.get("/api/symbols")
 async def get_symbols_api():
     """Fetches unique stock symbols from NSE India with caching."""
@@ -113,15 +109,22 @@ async def get_sentiment_api():
         "forecast": forecast
     }
 
-# --- Serve the main index.html file at the root URL (This must be the LAST route) ---
-# This ensures that any request not caught by /static or /api goes to index.html
-@app.get("/{full_path:path}") # This route handles all other paths
-async def serve_all_paths(full_path: str):
-    # If the path is not a file that exists in 'public',
-    # it defaults to serving index.html (for single-page app routing)
-    file_path = Path("public") / full_path
-    if file_path.is_file():
-        return FileResponse(file_path)
+# --- This MUST be the very LAST route defined ---
+# It serves index.html for all paths not caught by /static or /api.
+# This is common for Single Page Applications (SPAs) where frontend routing handles paths.
+@app.get("/{full_path:path}")
+async def serve_frontend(full_path: str):
+    # This ensures that if a direct file is requested (like an image that wasn't mounted via /static/ for example),
+    # it gets served. Otherwise, it falls back to index.html for SPA routing.
+    # Note: /static/* requests should have been handled by app.mount("/static", ...) already.
+    # We explicitly check for common static file extensions to avoid conflicts if needed,
+    # though app.mount's precedence usually handles this.
+    
+    # In this specific case, as /static is handled, any other path (like /favicon.ico or non-existent routes)
+    # should return index.html for the SPA.
+    
+    # Render's build process typically places everything from your repo root,
+    # so 'public/index.html' needs to be available relative to the app's working directory.
     return FileResponse(Path("public/index.html"))
 
 # This part is for local development with Uvicorn
