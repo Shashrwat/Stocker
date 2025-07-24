@@ -125,6 +125,6 @@ async def serve_all_paths(full_path: str):
     return FileResponse(Path("public/index.html"))
 
 # This part is for local development with Uvicorn
-if _name_ == "_main_":
+if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
