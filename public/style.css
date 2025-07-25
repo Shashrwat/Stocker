@@ -727,6 +727,57 @@ html, body {
     font-style: normal;
 }
 
+/* Animated gradient text */
+.gradient-animate-text .gradient-text {
+    background: linear-gradient(90deg, #00e6e6, #ff00ff, #00b0ff, #00ff80, #00e6e6);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradient-move 4s linear infinite alternate;
+    font-weight: 900;
+    letter-spacing: 6px;
+}
+@keyframes gradient-move {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+}
+
+/* Section fade/slide-in animation */
+.animated-section {
+    opacity: 0;
+    transform: translateY(40px) scale(0.98);
+    transition: opacity 1s cubic-bezier(0.4,0,0.2,1), transform 1s cubic-bezier(0.4,0,0.2,1);
+}
+.animated-section.visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+/* Enhanced hover glows for cards and buttons */
+.metric-card:hover, .plot-container:hover, .ai-pulse:hover, .news-article:hover {
+    box-shadow: 0 0 40px 10px var(--color-accent), 0 0 80px 0 var(--color-primary), 0 15px 40px rgba(0, 230, 230, 0.25), inset 0 0 20px rgba(0, 230, 230, 0.1);
+    border-color: var(--color-accent);
+    filter: brightness(1.08) saturate(1.2);
+}
+
+/* Animated metric number (count up) */
+.metric-animate-number {
+    font-variant-numeric: tabular-nums;
+    transition: color 0.5s, text-shadow 0.5s;
+    will-change: contents;
+}
+
+/* Floating shapes animation */
+.floating-shape {
+    position: absolute;
+    opacity: 0.18;
+    animation: float-shape 12s ease-in-out infinite alternate;
+}
+@keyframes float-shape {
+    0% { transform: translateY(0) scale(1) rotate(0deg); }
+    100% { transform: translateY(-40px) scale(1.1) rotate(20deg); }
+}
+
 /* --- Responsive Adjustments --- */
 @media (max-width: 1024px) {
     .controls-container {
@@ -802,4 +853,38 @@ html, body {
         padding: 25px 15px;
         font-size: 0.8em;
     }
+}
+
+/* Remove neon grid and floating shapes backgrounds */
+#neon-grid-bg, #floating-shapes-bg {
+    display: none !important;
+}
+
+/* Dark theme with subtle dot grid background */
+body, html {
+    background: #10121a;
+    position: relative;
+}
+
+/* Dot grid overlay */
+#dot-grid-bg {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: 0;
+    pointer-events: none;
+    background: none;
+}
+#dot-grid-bg canvas {
+    width: 100vw;
+    height: 100vh;
+    display: block;
+}
+
+/* Minimal particles style (for tsParticles) */
+.tsparticles-canvas {
+    position: fixed !important;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: 1;
+    pointer-events: none;
+    background: none;
 }

@@ -31,10 +31,12 @@ console.log("script.js: Starting script execution.");
 document.addEventListener('DOMContentLoaded', async () => {
     console.log("script.js: DOMContentLoaded event fired. Starting initial async operations.");
 
-    // Initialize tsParticles background
-    console.log("script.js: Calling loadParticles()...");
-    await loadParticles().catch(e => console.error("script.js: Error in loadParticles:", e));
-    console.log("script.js: loadParticles() finished.");
+    // Render dot grid background
+    renderDotGrid();
+    // Initialize minimal tsParticles
+    await loadMinimalParticles();
+    // Animate section entrances
+    animateSectionsOnScroll();
 
     console.log("script.js: Setting up event listeners.");
     
@@ -103,133 +105,94 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log("script.js: DOMContentLoaded block finished.");
 });
 
-
 /**
- * Initializes the tsParticles background animation with a high-impact, techy configuration.
+ * Renders a subtle grid of evenly spaced small dots on a canvas.
  */
-async function loadParticles() {
-    console.log("loadParticles(): Function started.");
-    try {
-        await tsParticles.load({
-            id: "tsparticles",
-            options: {
-                background: {
-                    color: { value: "transparent" },
-                },
-                fpsLimit: 90, // Smooth frame rate
-                interactivity: {
-                    events: {
-                        onClick: {
-                            enable: true,
-                            mode: "push", // Create new particles on click
-                        },
-                        onHover: {
-                            enable: true,
-                            mode: "repulse", // Push particles away on hover
-                            parallax: {
-                                enable: true,
-                                force: 40, // Stronger parallax effect
-                                smooth: 10,
-                            },
-                        },
-                        resize: true,
-                    },
-                    modes: {
-                        push: {
-                            quantity: 3, // Push 3 particles on click
-                        },
-                        repulse: {
-                            distance: 120, // Affects particles within 120px
-                            duration: 0.5,
-                        },
-                    },
-                },
-                particles: {
-                    color: {
-                        value: ["#00e6e6", "#66e6ff", "#ff7f7f", "#9d5bff"], // Primary, Secondary, Accent, Purple
-                    },
-                    links: {
-                        color: {
-                            value: "#ffffff", // White links
-                        },
-                        distance: 100, // Shorter link distance for denser network
-                        enable: true,
-                        opacity: 0.2, // More subtle links
-                        width: 1,
-                        triangles: { // Triangles add depth
-                            enable: true,
-                            color: {
-                                value: "#ffffff"
-                            },
-                            opacity: 0.02 // Very subtle triangles
-                        }
-                    },
-                    move: {
-                        direction: "none",
-                        enable: true,
-                        outModes: {
-                            default: "bounce", // Particles bounce off edges
-                        },
-                        random: true, // Random movement for organic feel
-                        speed: 0.8, // Slower, more graceful movement
-                        straight: false,
-                        attract: {
-                            enable: false, // No auto-attract
-                        },
-                    },
-                    number: {
-                        density: {
-                            enable: true,
-                            area: 900, // Denser particle distribution
-                        },
-                        value: 150, // More particles overall
-                    },
-                    opacity: {
-                        value: { min: 0.2, max: 0.6 }, // Varied and subtle opacity
-                        animation: {
-                            enable: true,
-                            speed: 0.5,
-                            sync: false,
-                            startValue: "random",
-                            destroy: "none"
-                        }
-                    },
-                    shape: {
-                        type: ["circle", "square", "triangle"], // Mix of shapes
-                        options: {
-                            polygon: {
-                                sides: 5 // Default for triangle if type is 'polygon'
-                            }
-                        }
-                    },
-                    size: {
-                        value: { min: 0.5, max: 3 }, // Smaller, varied sizes for a fine "dust" effect
-                        animation: {
-                            enable: true,
-                            speed: 1.5,
-                            sync: false,
-                            startValue: "random",
-                            destroy: "none"
-                        }
-                    },
-                    collisions: { // Particles react to each other
-                        enable: true,
-                    },
-                },
-                detectRetina: true,
-                fullScreen: { 
-                    enable: true,
-                    zIndex: -1 // Ensure it's behind all content
-                }
-            },
-        });
-        console.log("loadParticles(): tsParticles.load completed.");
-    } catch (e) {
-        console.error("loadParticles(): Error during tsParticles.load:", e);
-        throw e; // Re-throw to propagate error
+function renderDotGrid() {
+    const gridDiv = document.getElementById('dot-grid-bg');
+    if (!gridDiv) return;
+    let canvas = gridDiv.querySelector('canvas');
+    if (!canvas) {
+        canvas = document.createElement('canvas');
+        gridDiv.appendChild(canvas);
     }
+    function resizeAndDraw() {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = window.innerWidth * dpr;
+        canvas.height = window.innerHeight * dpr;
+        canvas.style.width = window.innerWidth + 'px';
+        canvas.style.height = window.innerHeight + 'px';
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.scale(dpr, dpr);
+        const spacing = 36;
+        const dotRadius = 1.2;
+        ctx.globalAlpha = 0.18;
+        ctx.fillStyle = '#e0e0e0';
+        for (let y = spacing/2; y < window.innerHeight; y += spacing) {
+            for (let x = spacing/2; x < window.innerWidth; x += spacing) {
+                ctx.beginPath();
+                ctx.arc(x, y, dotRadius, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+        }
+        ctx.restore();
+    }
+    window.addEventListener('resize', resizeAndDraw);
+    resizeAndDraw();
 }
 
+/**
+ * Loads tsParticles with a minimal, softly animated white/gray particles config.
+ */
+async function loadMinimalParticles() {
+    await tsParticles.load({
+        id: "tsparticles",
+        options: {
+            background: { color: { value: "transparent" } },
+            fpsLimit: 60,
+            particles: {
+                number: { value: 60, density: { enable: true, area: 900 } },
+                color: { value: ["#fff", "#e0e0e0"] },
+                shape: { type: "circle" },
+                opacity: { value: 0.5, random: { enable: true, minimumValue: 0.3 } },
+                size: { value: 2.5, random: { enable: true, minimumValue: 1.2 } },
+                move: {
+                    enable: true,
+                    speed: 0.3,
+                    direction: "none",
+                    random: true,
+                    straight: false,
+                    outModes: { default: "out" },
+                    attract: { enable: false }
+                },
+                links: {
+                    enable: true,
+                    distance: 110,
+                    color: "#fff",
+                    opacity: 0.13,
+                    width: 1.1
+                }
+            },
+            interactivity: {
+                events: {
+                    onHover: { enable: true, mode: ["grab", "connect"] },
+                    resize: true
+                },
+                modes: {
+                    grab: {
+                        distance: 140,
+                        links: { opacity: 0.25 }
+                    },
+                    connect: { distance: 120, radius: 80, links: { opacity: 0.18 } }
+                }
+            },
+            detectRetina: true,
+            fullScreen: { enable: true, zIndex: 1 }
+        }
+    });
+}
 
 /**
  * Displays a temporary message to the user.
@@ -629,19 +592,25 @@ function updateInfoMetrics(hist, info) {
         const value = topMetrics[metric];
         let displayValue = 'N/A';
         let customClass = '';
-
+        let animate = false;
+        let prefix = '';
+        let decimals = 2;
         if (value !== undefined && value !== null) {
             if (metric === 'Daily Change') {
                 displayValue = value;
-                customClass = changeClass; // Apply change color class
+                customClass = changeClass;
             } else if (typeof value === 'number') {
+                animate = true;
                 if (metric === 'Market Cap') {
-                    displayValue = `₹${value.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+                    prefix = '\u20b9';
+                    decimals = 0;
                 } else if (metric === 'P/E Ratio') {
-                    displayValue = value.toFixed(2);
+                    decimals = 2;
                 } else {
-                    displayValue = `₹${value.toFixed(2)}`;
+                    prefix = '\u20b9';
+                    decimals = 2;
                 }
+                displayValue = `<span class='metric-animate-number'>0</span>`;
             } else {
                 displayValue = value;
             }
@@ -653,6 +622,26 @@ function updateInfoMetrics(hist, info) {
             </div>
         `;
     }
+    // Animate numbers after rendering
+    setTimeout(() => {
+        const cards = metricsContainer.querySelectorAll('.metric-card');
+        let i = 0;
+        for (const metric in topMetrics) {
+            const value = topMetrics[metric];
+            if (typeof value === 'number') {
+                const numEl = cards[i].querySelector('.metric-animate-number');
+                if (numEl) {
+                    let prefix = '';
+                    let decimals = 2;
+                    if (metric === 'Market Cap') { prefix = '\u20b9'; decimals = 0; }
+                    else if (metric === 'P/E Ratio') { decimals = 2; }
+                    else { prefix = '\u20b9'; decimals = 2; }
+                    animateNumber(numEl, value, prefix, 1200, decimals);
+                }
+            }
+            i++;
+        }
+    }, 100);
 
     // Company Overview Section
     if (info.longBusinessSummary) {
@@ -830,6 +819,46 @@ async function loadNews(symbol) {
         newsList.innerHTML = '<p style="text-align: center; color: var(--text-color-medium);">No recent market intelligence found for this stock. The data stream is quiet.</p>';
     }
     console.log("loadNews(): Function finished.");
+}
+
+/**
+ * Animates section entrances on scroll using IntersectionObserver.
+ */
+function animateSectionsOnScroll() {
+    const sections = document.querySelectorAll('.animated-section');
+    const observer = new window.IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.15 });
+    sections.forEach(section => observer.observe(section));
+}
+/**
+ * Animates numbers in metric cards to count up smoothly.
+ * @param {HTMLElement} el - The element to animate.
+ * @param {number} end - The final value.
+ * @param {string} prefix - Optional prefix (e.g., currency).
+ * @param {number} duration - Animation duration in ms.
+ * @param {number} decimals - Number of decimals.
+ */
+function animateNumber(el, end, prefix = '', duration = 1200, decimals = 2) {
+    const start = 0;
+    const startTime = performance.now();
+    function update(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const value = start + (end - start) * progress;
+        el.textContent = prefix + value.toLocaleString('en-IN', { maximumFractionDigits: decimals });
+        if (progress < 1) {
+            requestAnimationFrame(update);
+        } else {
+            el.textContent = prefix + end.toLocaleString('en-IN', { maximumFractionDigits: decimals });
+        }
+    }
+    requestAnimationFrame(update);
 }
 
 // Ensure initial search suggestions are loaded once on DOMContentLoaded

@@ -17,11 +17,12 @@
     <script src="https://cdn.jsdelivr.net/npm/@tsparticles/slim@2/tsparticles.slim.min.js"></script>
 </head>
 <body>
+    <div id="dot-grid-bg"></div>
     <div id="tsparticles"></div>
 
-    <div class="main-content-wrapper">
+    <div class="main-content-wrapper animated-section">
         <div class="header-container">
-            <h1 class="header-text">STOCKER: DATA HORIZON</h1>
+            <h1 class="header-text gradient-animate-text"><span class="gradient-text">STOCKER: DATA HORIZON</span></h1>
             <p class="tagline">Navigate the Markets with Precision</p>
             <div class="header-line"></div>
         </div>
@@ -67,12 +68,12 @@
         </div>
         <div id="message-box" class="message-box" style="display: none;"></div>
 
-        <div class="metrics-grid" id="metrics-container">
+        <div class="metrics-grid animated-section" id="metrics-container">
             </div>
 
-        <div id="main-chart" class="plot-container glass-effect"></div>
+        <div id="main-chart" class="plot-container glass-effect animated-section"></div>
 
-        <div id="overview-section" class="metric-card company-overview glass-effect" style="display: none;">
+        <div id="overview-section" class="metric-card company-overview glass-effect animated-section" style="display: none;">
             <h3><span id="overview-symbol"></span> Company Overview <i class="fas fa-info-circle"></i></h3>
             <p id="business-summary"></p>
             <div class="company-details">
@@ -83,19 +84,19 @@
             </div>
         </div>
 
-        <div class="metrics-grid" id="secondary-metrics-container">
+        <div class="metrics-grid animated-section" id="secondary-metrics-container">
             </div>
 
-        <div class="charts-row">
+        <div class="charts-row animated-section">
             <div id="volume-chart" class="plot-container glass-effect"></div>
             <div id="ownership-chart" class="plot-container glass-effect"></div>
             <div id="returns-chart" class="plot-container glass-effect"></div>
         </div>
 
-        <div class="ai-pulse glass-effect" id="ai-insights-section">
+        <div class="ai-pulse glass-effect animated-section" id="ai-insights-section">
             </div>
 
-        <div class="news-section glass-effect" id="news-section" style="display: none;">
+        <div class="news-section glass-effect animated-section" id="news-section" style="display: none;">
             <h2>ORACLE NEWS FEED 📰 <span id="news-symbol"></span></h2>
             <div id="news-list" class="news-list">
                 </div>
