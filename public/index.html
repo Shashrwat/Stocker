@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stocker: Nebula Nexus Analytics</title>
+    <title>Stocker: Data Horizon</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="/style.css">
     
@@ -19,12 +21,12 @@
 
     <div class="main-content-wrapper">
         <div class="header-container">
-            <h1 class="header-text">STOCKER: NEBULA NEXUS ANALYTICS</h1>
-            <p class="tagline">Explore the Universe of Financial Data</p>
+            <h1 class="header-text">STOCKER: DATA HORIZON</h1>
+            <p class="tagline">Navigate the Markets with Precision</p>
             <div class="header-line"></div>
         </div>
 
-        <div class="controls-container">
+        <div class="controls-container glass-effect">
             <div class="input-group">
                 <label for="stock-search-input"><i class="fas fa-search"></i> Select or Search Stock:</label>
                 <input type="text" id="stock-search-input" class="text-input" list="stock-suggestions" placeholder="e.g., RELIANCE, TCS" autocomplete="off">
@@ -50,7 +52,7 @@
                 </select>
             </div>
             <div class="input-group">
-                <label for="indicator-select"><i class="fas fa-chart-bar"></i> Indicator:</label>
+                <label for="indicator-select"><i class="fas fa-compass"></i> Indicator:</label>
                 <select id="indicator-select" class="select-box">
                     <option value="None">None</option>
                     <option value="SMA50">SMA (50-day)</option>
@@ -61,22 +63,22 @@
 
         <div id="loading-indicator" class="loading-spinner" style="display: none;">
             <div class="spinner"></div>
-            <p>Loading Cosmic Data...</p>
+            <p>Processing data from the financial cosmos...</p>
         </div>
         <div id="message-box" class="message-box" style="display: none;"></div>
 
         <div class="metrics-grid" id="metrics-container">
             </div>
 
-        <div id="main-chart" class="plot-container"></div>
+        <div id="main-chart" class="plot-container glass-effect"></div>
 
-        <div id="overview-section" class="metric-glow company-overview" style="display: none;">
-            <h3 style='color: var(--color-primary); margin-top:0'><span id="overview-symbol"></span> Company Overview <i class="fas fa-info-circle"></i></h3>
-            <p id="business-summary" style='line-height: 1.6;'></p>
+        <div id="overview-section" class="metric-card company-overview glass-effect" style="display: none;">
+            <h3><span id="overview-symbol"></span> Company Overview <i class="fas fa-info-circle"></i></h3>
+            <p id="business-summary"></p>
             <div class="company-details">
                 <strong>Industry:</strong> <span id="industry">N/A</span><br>
                 <strong>Sector:</strong> <span id="sector">N/A</span><br>
-                <strong>Website:</strong> <a id="website" href="#" target="_blank" style="color: var(--color-secondary);">N/A</a><br>
+                <strong>Website:</strong> <a id="website" href="#" target="_blank">N/A</a><br>
                 <strong>Employees:</strong> <span id="employees">N/A</span>
             </div>
         </div>
@@ -85,23 +87,23 @@
             </div>
 
         <div class="charts-row">
-            <div id="volume-chart" class="plot-container"></div>
-            <div id="ownership-chart" class="plot-container"></div>
-            <div id="returns-chart" class="plot-container"></div>
+            <div id="volume-chart" class="plot-container glass-effect"></div>
+            <div id="ownership-chart" class="plot-container glass-effect"></div>
+            <div id="returns-chart" class="plot-container glass-effect"></div>
         </div>
 
-        <div class="ai-pulse" id="ai-insights-section">
+        <div class="ai-pulse glass-effect" id="ai-insights-section">
             </div>
 
-        <div class="news-section" id="news-section" style="display: none;">
-            <h2 style='color: var(--color-primary); text-align: center;'>NEBULA NEWS FEED 📰 <span id="news-symbol"></span></h2>
+        <div class="news-section glass-effect" id="news-section" style="display: none;">
+            <h2>ORACLE NEWS FEED 📰 <span id="news-symbol"></span></h2>
             <div id="news-list" class="news-list">
                 </div>
-            <p class="disclaimer">Note: News articles are simulated for demonstration purposes.</p>
+            <p class="disclaimer">Note: News articles are simulated for demonstration purposes and do not reflect real-time market data.</p>
         </div>
 
         <footer class="footer">
-            <p>&copy; 2024 Stocker: Nebula Nexus. All rights reserved.</p>
+            <p>&copy; 2024 Stocker: Data Horizon. All rights reserved.</p>
             <p class="disclaimer">Disclaimer: This application is for informational purposes only and does not constitute financial advice. Always consult a professional financial advisor before making investment decisions.</p>
         </footer>
     </div>

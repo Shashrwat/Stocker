@@ -11,7 +11,7 @@ import requests
 import io
 import datetime
 import re # For regex in fuzzy search
-import random
+import random # For sentiment simulation
 
 app = FastAPI()
 
@@ -64,7 +64,7 @@ async def get_symbols_api():
     except requests.exceptions.RequestException as e:
         raise HTTPException(status_code=500, detail=f"Error fetching symbols from NSE: {e}. Please check your internet connection or try again later.")
     except pd.errors.EmptyDataError:
-        raise HTTPException(status_code=500, detail="NSE data is empty or malformed.")
+        raise HTTPException(status_code=500, detail="NSE data is empty or malformed. Please try again later.")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred while fetching symbols: {e}")
 

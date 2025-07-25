@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => {
             const query = stockSearchInput.value.trim();
-            if (query.length > 0) {
+            if (query.length >= 1) { // Trigger search for at least 1 character
                 searchAndSuggestSymbols(query);
             } else {
                 stockSuggestionsDatalist.innerHTML = ''; // Clear suggestions if input is empty
@@ -51,9 +51,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, SEARCH_DEBOUNCE_TIME);
     });
 
-    // Event listener for when a suggestion is selected OR user types and presses Enter
+    // Event listener for when a suggestion is selected OR user types and presses Enter/leaves field
     stockSearchInput.addEventListener('change', async () => {
-        const selectedSymbol = stockSearchInput.value.trim();
+        const selectedSymbol = stockSearchInput.value.trim().toUpperCase(); // Ensure uppercase for consistency
         if (selectedSymbol) {
             console.log(`script.js: Stock input changed to ${selectedSymbol}. Calling loadStockDataAndCharts()...`);
             await loadStockDataAndCharts(selectedSymbol);
@@ -84,18 +84,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Initial load of data for a default stock (e.g., RELIANCE or the first one if not available)
-    // We'll try to pre-fill the search input and load data.
-    // This requires a initial call to load symbols to set a default.
+    // Initial load of data for a default stock
     try {
-        await searchAndSuggestSymbols(""); // Load all symbols initially to pick a default
-        const defaultSymbol = stockSuggestionsDatalist.querySelector('option')?.value || "RELIANCE";
-        if (defaultSymbol) {
-            stockSearchInput.value = defaultSymbol; // Set the default in the input
-            await loadStockDataAndCharts(defaultSymbol);
-            await loadAISentiment();
-            await loadNews(defaultSymbol);
-        }
+        // Pre-populate datalist with some common symbols (if not dynamically loading on initial start)
+        // For a smoother initial load, you could fetch all symbols and store them client-side if the list isn't too large
+        // For now, let's rely on searchAndSuggestSymbols to populate the datalist for the first time
+        await searchAndSuggestSymbols("RELI"); // Load some initial suggestions, e.g., for "RELI"
+        const defaultSymbol = "RELIANCE"; // Default stock
+        stockSearchInput.value = defaultSymbol; // Set the default in the input
+        await loadStockDataAndCharts(defaultSymbol);
+        await loadAISentiment();
+        await loadNews(defaultSymbol);
     } catch (error) {
         console.error("script.js: Initialization chain failed:", error);
         showMessage("Failed to load initial data. Please try again or search for a stock.", "error");
@@ -106,7 +105,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 /**
- * Initializes the tsParticles background animation with a more intricate configuration.
+ * Initializes the tsParticles background animation with a high-impact, techy configuration.
  */
 async function loadParticles() {
     console.log("loadParticles(): Function started.");
@@ -117,19 +116,19 @@ async function loadParticles() {
                 background: {
                     color: { value: "transparent" },
                 },
-                fpsLimit: 120, // Higher FPS for smoother animation
+                fpsLimit: 90, // Smooth frame rate
                 interactivity: {
                     events: {
                         onClick: {
                             enable: true,
-                            mode: "push",
+                            mode: "push", // Create new particles on click
                         },
                         onHover: {
                             enable: true,
-                            mode: "attract", // Changed to attract for a pull effect
+                            mode: "repulse", // Push particles away on hover
                             parallax: {
                                 enable: true,
-                                force: 60,
+                                force: 40, // Stronger parallax effect
                                 smooth: 10,
                             },
                         },
@@ -137,67 +136,56 @@ async function loadParticles() {
                     },
                     modes: {
                         push: {
-                            quantity: 4,
+                            quantity: 3, // Push 3 particles on click
                         },
-                        attract: {
-                            distance: 200,
-                            duration: 0.8,
-                            easing: "ease-out-quad", // Smoother easing
-                            factor: 1,
-                            maxSpeed: 50,
-                            speed: 1
-                        },
-                        repulse: { // Keep repulse as an alternative or for another mode
-                            distance: 150,
+                        repulse: {
+                            distance: 120, // Affects particles within 120px
                             duration: 0.5,
                         },
                     },
                 },
                 particles: {
                     color: {
-                        // More subtle and varied cosmic colors
-                        value: ["#00f2fe", "#4facfe", "#ff6b6b", "#e0e0e0", "#8a2be2"],
+                        value: ["#00e6e6", "#66e6ff", "#ff7f7f", "#9d5bff"], // Primary, Secondary, Accent, Purple
                     },
                     links: {
                         color: {
                             value: "#ffffff", // White links
                         },
-                        distance: 150,
+                        distance: 100, // Shorter link distance for denser network
                         enable: true,
-                        opacity: 0.4, // Slightly more opaque links
-                        width: 1.5, // Thicker links
-                        triangles: { // Add triangles between connected particles for more visual interest
+                        opacity: 0.2, // More subtle links
+                        width: 1,
+                        triangles: { // Triangles add depth
                             enable: true,
                             color: {
                                 value: "#ffffff"
                             },
-                            opacity: 0.05
+                            opacity: 0.02 // Very subtle triangles
                         }
                     },
                     move: {
                         direction: "none",
                         enable: true,
                         outModes: {
-                            default: "bounce",
+                            default: "bounce", // Particles bounce off edges
                         },
-                        random: true, // Random movement for more organic feel
-                        speed: 1, // Slower speed
+                        random: true, // Random movement for organic feel
+                        speed: 0.8, // Slower, more graceful movement
                         straight: false,
                         attract: {
-                            enable: true,
-                            rotateX: 600,
-                            rotateY: 1200
+                            enable: false, // No auto-attract
                         },
                     },
                     number: {
                         density: {
                             enable: true,
-                            area: 800,
+                            area: 900, // Denser particle distribution
                         },
-                        value: 120, // More particles
+                        value: 150, // More particles overall
                     },
                     opacity: {
-                        value: { min: 0.3, max: 0.7 }, // Varied opacity
+                        value: { min: 0.2, max: 0.6 }, // Varied and subtle opacity
                         animation: {
                             enable: true,
                             speed: 0.5,
@@ -207,31 +195,31 @@ async function loadParticles() {
                         }
                     },
                     shape: {
-                        type: ["circle", "star"], // Add stars
+                        type: ["circle", "square", "triangle"], // Mix of shapes
                         options: {
-                            star: {
-                                sides: 5 // Default star sides
+                            polygon: {
+                                sides: 5 // Default for triangle if type is 'polygon'
                             }
                         }
                     },
                     size: {
-                        value: { min: 1, max: 4 }, // Smaller, varied sizes
+                        value: { min: 0.5, max: 3 }, // Smaller, varied sizes for a fine "dust" effect
                         animation: {
                             enable: true,
-                            speed: 2,
+                            speed: 1.5,
                             sync: false,
                             startValue: "random",
                             destroy: "none"
                         }
                     },
-                    collisions: { // Enable collisions for bouncing effect
+                    collisions: { // Particles react to each other
                         enable: true,
                     },
                 },
                 detectRetina: true,
-                fullScreen: { // Ensure it covers the whole screen
+                fullScreen: { 
                     enable: true,
-                    zIndex: -1
+                    zIndex: -1 // Ensure it's behind all content
                 }
             },
         });
@@ -297,7 +285,7 @@ async function searchAndSuggestSymbols(query) {
         }
     } catch (error) {
         console.error("searchAndSuggestSymbols(): Error:", error);
-        showMessage(`Error searching symbols: ${error.message}`, "error");
+        // showMessage(`Error searching symbols: ${error.message}`, "error"); // Don't show error for every search typing
         stockSuggestionsDatalist.innerHTML = '';
     }
 }
@@ -421,8 +409,8 @@ function renderMainChart(hist, symbol, chartType, indicator) {
             close: hist.map(d => d.Close),
             type: 'candlestick',
             name: 'Price',
-            increasing: { line: { color: 'var(--color-primary)' } },
-            decreasing: { line: { color: 'var(--color-accent)' } }
+            increasing: { line: { color: 'var(--color-positive)' } }, // Green for increasing
+            decreasing: { line: { color: 'var(--color-negative)' } } // Red for decreasing
         });
     } else {
         traces.push({
@@ -466,34 +454,34 @@ function renderMainChart(hist, symbol, chartType, indicator) {
 
     const layout = {
         title: {
-            text: `<b>${symbol} Price Chart</b>`,
-            font: { size: 24, color: 'var(--color-primary)', family: 'Orbitron, sans-serif' }
+            text: `<b>${symbol} Price Trend</b>`,
+            font: { size: 24, color: 'var(--color-primary)', family: 'Space Grotesk, sans-serif' }
         },
         height: 500,
         xaxis: { 
             rangeslider: { visible: false }, 
             showgrid: false, 
             zeroline: false,
-            tickfont: { color: 'white' },
+            tickfont: { color: 'var(--text-color-medium)' },
             type: 'date',
-            title: { text: 'Date', font: { color: 'white' } }
+            title: { text: 'Date', font: { color: 'var(--text-color-light)' } }
         },
         yaxis: { 
             showgrid: false, 
             zeroline: false,
-            tickfont: { color: 'white' },
-            title: { text: 'Price', font: { color: 'white' } }
+            tickfont: { color: 'var(--text-color-medium)' },
+            title: { text: 'Price (INR)', font: { color: 'var(--text-color-light)' } }
         },
         plot_bgcolor: 'rgba(0,0,0,0)',
-        paper_bgcolor: 'rgba(0,0,0,0.3)',
-        font: { color: 'white', family: 'Roboto, sans-serif' },
+        paper_bgcolor: 'rgba(0,0,0,0)', // Ensure chart background is transparent
+        font: { color: 'var(--text-color-light)', family: 'Space Grotesk, sans-serif' },
         margin: { t: 60, b: 60, l: 60, r: 60 },
         hovermode: 'x unified',
         legend: {
             x: 0, y: 1.1,
             bgcolor: 'rgba(0,0,0,0)',
             bordercolor: 'rgba(0,0,0,0)',
-            font: { color: 'white' }
+            font: { color: 'var(--text-color-light)' }
         }
     };
 
@@ -503,7 +491,7 @@ function renderMainChart(hist, symbol, chartType, indicator) {
 /**
  * Renders the volume bar chart.
  * @param {Array<Object>} hist - Historical data.
- */
+*/
 function renderVolumeBars(hist) {
     const trace = {
         x: hist.map(d => d.date),
@@ -514,22 +502,22 @@ function renderVolumeBars(hist) {
                 const close = d.Close;
                 const open = d.Open;
                 // Color based on price change: green for increase, red for decrease
-                return close >= open ? 'rgba(0, 242, 254, 0.7)' : 'rgba(255, 107, 107, 0.7)';
+                return close >= open ? 'var(--color-positive)' : 'var(--color-negative)';
             }), 
             line: { width: 0 }
         }
     };
     const layout = {
         title: {
-            text: '<b>Daily Volume</b>',
-            font: { size: 20, color: 'var(--color-primary)', family: 'Orbitron, sans-serif' }
+            text: '<b>Daily Trading Volume</b>',
+            font: { size: 20, color: 'var(--color-primary)', family: 'Space Grotesk, sans-serif' }
         },
         height: 300,
-        xaxis: { showgrid: false, zeroline: false, tickfont: { color: 'white' }, type: 'date', title: { text: 'Date', font: { color: 'white' } } },
-        yaxis: { showgrid: false, zeroline: false, tickfont: { color: 'white' }, title: { text: 'Volume', font: { color: 'white' } } },
+        xaxis: { showgrid: false, zeroline: false, tickfont: { color: 'var(--text-color-medium)' }, type: 'date', title: { text: 'Date', font: { color: 'var(--text-color-light)' } } },
+        yaxis: { showgrid: false, zeroline: false, tickfont: { color: 'var(--text-color-medium)' }, title: { text: 'Volume', font: { color: 'var(--text-color-light)' } } },
         plot_bgcolor: 'rgba(0,0,0,0)',
-        paper_bgcolor: 'rgba(0,0,0,0.3)',
-        font: { color: 'white', family: 'Roboto, sans-serif' },
+        paper_bgcolor: 'rgba(0,0,0,0)', // Ensure chart background is transparent
+        font: { color: 'var(--text-color-light)', family: 'Space Grotesk, sans-serif' },
         margin: { t: 60, b: 60, l: 60, r: 60 }
     };
     Plotly.newPlot(volumeChartDiv, [trace], layout);
@@ -545,26 +533,26 @@ function renderAnalyticsPie() {
         hole: 0.5,
         type: 'pie',
         marker: {
-            colors: ['var(--color-primary)', 'var(--color-secondary)', 'var(--color-accent)', '#8a2be2'], // Added another color
-            line: { color: 'white', width: 2 }
+            colors: ['var(--color-primary)', 'var(--color-accent)', 'var(--color-secondary)', '#8a2be2'], // Added another color
+            line: { color: 'var(--color-dark-bg)', width: 2 } // Darker line for contrast
         },
         textinfo: 'percent+label',
         hoverinfo: 'label+percent+value',
         textfont: {
-            color: 'white' // Text on pie slices
+            color: 'var(--text-color-light)' // Text on pie slices
         }
     };
     const layout = {
         title: {
-            text: '<b>Ownership Structure</b>',
-            font: { size: 20, color: 'var(--color-primary)', family: 'Orbitron, sans-serif' }
+            text: '<b>Ownership Distribution</b>',
+            font: { size: 20, color: 'var(--color-primary)', family: 'Space Grotesk, sans-serif' }
         },
         plot_bgcolor: 'rgba(0,0,0,0)',
-        paper_bgcolor: 'rgba(0,0,0,0.3)',
-        font: { color: 'white', family: 'Roboto, sans-serif' },
+        paper_bgcolor: 'rgba(0,0,0,0)', // Ensure chart background is transparent
+        font: { color: 'var(--text-color-light)', family: 'Space Grotesk, sans-serif' },
         margin: { t: 60, b: 60, l: 60, r: 60 },
         legend: {
-            font: { color: 'white' }
+            font: { color: 'var(--text-color-light)' }
         }
     };
     Plotly.newPlot(ownershipChartDiv, [trace], layout);
@@ -589,20 +577,20 @@ function renderReturnsWave(hist) {
         x: returns,
         type: 'histogram',
         histnorm: 'probability density',
-        marker: { color: 'rgba(79,172,254,0.6)', line: { color: 'rgba(79,172,254,0.9)', width: 1 } },
+        marker: { color: 'var(--color-primary-transparent)', line: { color: 'var(--color-primary)', width: 1 } },
         name: 'Returns Histogram'
     };
 
     const layout = {
         title: {
             text: '<b>Daily Returns Distribution</b>',
-            font: { size: 20, color: 'var(--color-primary)', family: 'Orbitron, sans-serif' }
+            font: { size: 20, color: 'var(--color-primary)', family: 'Space Grotesk, sans-serif' }
         },
-        xaxis: { title: 'Daily Returns', showgrid: false, zeroline: false, tickfont: { color: 'white' } },
-        yaxis: { title: 'Density', showgrid: false, zeroline: false, tickfont: { color: 'white' } },
+        xaxis: { title: 'Daily Returns', showgrid: false, zeroline: false, tickfont: { color: 'var(--text-color-medium)' } },
+        yaxis: { title: 'Density', showgrid: false, zeroline: false, tickfont: { color: 'var(--text-color-medium)' } },
         plot_bgcolor: 'rgba(0,0,0,0)',
-        paper_bgcolor: 'rgba(0,0,0,0.3)',
-        font: { color: 'white', family: 'Roboto, sans-serif' },
+        paper_bgcolor: 'rgba(0,0,0,0)', // Ensure chart background is transparent
+        font: { color: 'var(--text-color-light)', family: 'Space Grotesk, sans-serif' },
         showlegend: false,
         margin: { t: 60, b: 60, l: 60, r: 60 }
     };
@@ -659,7 +647,7 @@ function updateInfoMetrics(hist, info) {
             }
         }
         metricsContainer.innerHTML += `
-            <div class='metric-glow'>
+            <div class='metric-card glass-effect'>
                 <h3 style='color: var(--color-secondary); margin:0'>${metric}</h3>
                 <h2 class='${customClass}' style='color: var(--color-primary); margin:0'>${displayValue}</h2>
             </div>
@@ -696,7 +684,7 @@ function updateInfoMetrics(hist, info) {
         'EPS (Trailing)': info.trailingEps,
         'Book Value': info.bookValue, // New metric
         '52W Low': info.fiftyTwoWeekLow, // New metric
-        'Average Volume (10d)': info.averageDailyVolume10Day // New metric
+        'Avg. Volume (10d)': info.averageDailyVolume10Day // New metric
     };
 
     for (const metric in secondaryMetrics) {
@@ -716,7 +704,7 @@ function updateInfoMetrics(hist, info) {
             }
         }
         secondaryMetricsContainer.innerHTML += `
-            <div class='metric-glow'>
+            <div class='metric-card glass-effect'>
                 <h3 style='color: var(--color-secondary); margin:0'>${metric}</h3>
                 <h2 style='color: var(--color-primary); margin:0'>${displayValue}</h2>
             </div>
@@ -744,23 +732,23 @@ async function loadAISentiment() {
         const forecastIcon = data.forecast >= 0 ? '<i class="fas fa-arrow-up"></i>' : '<i class="fas fa-arrow-down"></i>';
 
         aiInsightsSection.innerHTML = `
-            <h2 style='color: var(--color-primary); text-align: center;'>AI Market Insights 🔮</h2>
+            <h2>AI MARKET INSIGHTS <i class="fas fa-brain"></i></h2>
             <div class='ai-metrics-row'>
                 <div class='ai-metric-item'>
-                    <h3 style='color: var(--color-secondary);'>7-Day Forecast</h3>
+                    <h3>7-Day Forecast</h3>
                     <div class='ai-metric-value ${forecastColorClass}'>
                         ${data.forecast}% ${forecastIcon}
                     </div>
                 </div>
                 <div class='ai-metric-item'>
-                    <h3 style='color: var(--color-secondary);'>Market Sentiment</h3>
+                    <h3>Market Sentiment</h3>
                     <div class='ai-sentiment-bar'>
-                        <div class='sentiment-fill bullish' style='width: ${data.bullish}%;'></div>
-                        <div class='sentiment-fill bearish' style='width: ${data.bearish}%;'></div>
+                        <div class='sentiment-fill positive-sentiment' style='width: ${data.bullish}%;'></div>
+                        <div class='sentiment-fill negative-sentiment' style='width: ${data.bearish}%;'></div>
                     </div>
                     <div class='sentiment-labels'>
-                        <span class='positive-change'>Bullish ${data.bullish}% <i class="fas fa-chart-line"></i></span>
-                        <span class='negative-change'>Bearish ${data.bearish}% <i class="fas fa-chart-line-down"></i></span>
+                        <span class='positive-change'>Bullish ${data.bullish}%</span>
+                        <span class='negative-change'>Bearish ${data.bearish}%</span>
                     </div>
                 </div>
             </div>
@@ -773,7 +761,7 @@ async function loadAISentiment() {
         console.log("loadAISentiment(): Rendering complete.");
     } catch (error) {
         console.error("loadAISentiment(): Critical error:", error);
-        aiInsightsSection.innerHTML = `<p style="color: var(--color-accent); text-align: center;">Failed to load AI insights.</p>`;
+        aiInsightsSection.innerHTML = `<p style="color: var(--color-negative); text-align: center;">Failed to load AI insights.</p>`;
     }
 }
 
@@ -791,15 +779,15 @@ async function loadNews(symbol) {
 
     newsSection.style.display = 'block';
     document.getElementById('news-symbol').textContent = `for ${symbol}`;
-    newsList.innerHTML = '<p style="text-align: center; color: #ccc;">Fetching latest news from the void...</p>';
+    newsList.innerHTML = '<p style="text-align: center; color: var(--text-color-medium);">Retrieving latest market intelligence...</p>';
 
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 1500)); // Slightly longer delay
 
     // More dynamic simulated news data
-    const newsKeywords = ["earnings", "partnership", "innovation", "market outlook", "investment", "growth", "challenge", "expansion"];
-    const sentiments = ["bullish", "positive", "neutral", "bearish", "caution"];
-    const sources = ["Stocker Herald", "Galaxy Finance", "Quantum Investor", "Cosmic Market News"];
+    const newsKeywords = ["earnings", "partnership", "innovation", "market outlook", "investment", "growth", "challenge", "expansion", "strategic move", "analyst rating"];
+    const sentiments = ["optimistic", "favorable", "neutral", "cautious", "challenging"];
+    const sources = ["Data Horizon Digest", "Global Financial Insights", "Quantum Market Analyst", "Apex Investor News"];
 
     const generateRandomNews = (sym) => {
         const numArticles = Math.floor(Math.random() * 3) + 3; // 3 to 5 articles
@@ -811,8 +799,8 @@ async function loadNews(symbol) {
             const date = new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000).toISOString().slice(0, 10); // Last 30 days
 
             articles.push({
-                title: `${sym} ${keyword} analysis: ${sentiment} outlook.`,
-                summary: `Latest reports indicate significant developments in ${sym}'s ${keyword} sector, leading to a ${sentiment} market sentiment.`,
+                title: `${sym}: ${keyword.charAt(0).toUpperCase() + keyword.slice(1)} outlook - ${sentiment}.`,
+                summary: `Experts discuss ${sym}'s recent ${keyword}, with a generally ${sentiment} outlook for the coming quarter, despite market fluctuations.`,
                 url: `https://example.com/news/${sym}-${keyword}-${i}`,
                 source: source,
                 date: date
@@ -831,7 +819,7 @@ async function loadNews(symbol) {
             const articleDiv = document.createElement('div');
             articleDiv.className = 'news-article';
             articleDiv.innerHTML = `
-                <h3><a href="${article.url}" target="_blank"><i class="fas fa-newspaper"></i> ${article.title}</a></h3>
+                <h3><a href="${article.url}" target="_blank"><i class="fas fa-arrow-right"></i> ${article.title}</a></h3>
                 <p>${article.summary}</p>
                 <div class="source-date">Source: ${article.source} <span class="bullet-separator"></span> Date: ${article.date}</div>
             `;
@@ -839,15 +827,12 @@ async function loadNews(symbol) {
         });
     } else {
         console.warn("loadNews(): No simulated news articles found.");
-        newsList.innerHTML = '<p style="text-align: center; color: #ccc;">No recent cosmic news found for this stock. The void is silent.</p>';
+        newsList.innerHTML = '<p style="text-align: center; color: var(--text-color-medium);">No recent market intelligence found for this stock. The data stream is quiet.</p>';
     }
     console.log("loadNews(): Function finished.");
 }
 
-// Initial symbol search and data load (on page load)
-// This will trigger the initial data fetch for a default stock
+// Ensure initial search suggestions are loaded once on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
-    // No direct call to loadSymbols anymore.
-    // The initial load in DOMContentLoaded will call searchAndSuggestSymbols
-    // to populate the datalist, and then load the default stock.
+    // This part is now handled by the initial try-catch block for full page load sequence
 });
